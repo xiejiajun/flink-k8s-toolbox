@@ -1,4 +1,4 @@
-apiVersion: "beta.nextbreakpoint.com/v1"
+apiVersion: "nextbreakpoint.com/v1"
 kind: FlinkCluster
 metadata:
   name: test
@@ -8,10 +8,10 @@ spec:
   pullSecrets: regcred
   pullPolicy: IfNotPresent
   flinkImage: nextbreakpoint/flink:1.7.2-1
+  sidecarServiceAccount: flink-sidecar
   sidecarImage: 192.168.1.11:30000/nextbreakpoint/flink-workshop-jobs:2
-  sidecarServiceAccount: flink-operator
-  sidecarClassName: com.nextbreakpoint.flink.jobs.TestJob
   sidecarJarPath: /com.nextbreakpoint.flinkworkshop-1.0.0.jar
+  sidecarClassName: com.nextbreakpoint.flink.jobs.TestJob
   sidecarParallelism: 1
   sidecarArguments:
     - --BUCKET_BASE_PATH

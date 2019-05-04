@@ -12,14 +12,20 @@ metadata:
     heritage: {{ $root.Release.Service }}
 rules:
   - apiGroups: [""]
-    resources: ["services", "pods", "services", "pods/portforward", "persistentvolumeclaims"]
-    verbs: ["get", "watch", "list", "create", "delete"]
+    resources: ["services", "pods", "persistentvolumeclaims"]
+    verbs: ["get", "list"]
   - apiGroups: ["apps"]
     resources: ["statefulsets"]
-    verbs: ["get", "watch", "list", "create", "delete"]
+    verbs: ["get", "list"]
   - apiGroups: ["apps"]
     resources: ["deployments"]
-    verbs: ["get", "watch", "list", "create", "delete"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["pods/portforward"]
+    verbs: ["get", "list", "create", "delete"]
+  - apiGroups: ["beta.nextbreakpoint.com"]
+    resources: ["flinkclusters"]
+    verbs: ["get", "list", "create", "delete"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -31,14 +37,27 @@ metadata:
     heritage: {{ $root.Release.Service }}
 rules:
   - apiGroups: [""]
-    resources: ["services", "pods", "services", "pods/portforward", "persistentvolumeclaims"]
-    verbs: ["get", "watch", "list", "create", "delete"]
+    resources: ["services", "pods", "persistentvolumeclaims"]
+    verbs: ["get", "list", "watch", "create", "delete"]
   - apiGroups: ["apps"]
     resources: ["statefulsets"]
-    verbs: ["get", "watch", "list", "create", "delete"]
+    verbs: ["get", "list", "watch", "create", "delete"]
   - apiGroups: ["apps"]
     resources: ["deployments"]
-    verbs: ["get", "watch", "list", "create", "delete"]
+    verbs: ["get", "list", "watch", "create", "delete"]
   - apiGroups: ["beta.nextbreakpoint.com"]
     resources: ["flinkclusters"]
-    verbs: ["get", "watch", "list"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: flink-sidecar
+  labels:
+    chart: {{ $chart }}
+    release: {{ $root.Release.Name }}
+    heritage: {{ $root.Release.Service }}
+rules:
+  - apiGroups: [""]
+    resources: ["services", "pods"]
+    verbs: ["get", "list"]

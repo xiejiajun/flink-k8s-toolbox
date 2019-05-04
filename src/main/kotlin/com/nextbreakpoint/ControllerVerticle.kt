@@ -8,8 +8,10 @@ import io.kubernetes.client.Configuration
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.handler.LoggerFormat
 import io.vertx.rxjava.core.AbstractVerticle
+import io.vertx.rxjava.core.Future
 import io.vertx.rxjava.core.http.HttpServer
 import io.vertx.rxjava.ext.web.Router
+import io.vertx.rxjava.ext.web.RoutingContext
 import io.vertx.rxjava.ext.web.handler.BodyHandler
 import io.vertx.rxjava.ext.web.handler.LoggerHandler
 import io.vertx.rxjava.ext.web.handler.TimeoutHandler
@@ -30,6 +32,8 @@ class ControllerVerticle : AbstractVerticle() {
 
         val kubeConfig: String? = config.getString("kubeConfig") ?: null
 
+        val useNodePort = kubeConfig != null
+
         val mainRouter = Router.router(vertx)
 
         mainRouter.route().handler(LoggerHandler.create(true, LoggerFormat.DEFAULT))
@@ -39,123 +43,75 @@ class ControllerVerticle : AbstractVerticle() {
         Configuration.setDefaultApiClient(createKubernetesClient(kubeConfig))
 
         mainRouter.post("/jobs/list").handler { context ->
-            vertx.rxExecuteBlocking<String> { future ->
-                future.complete(JobsListHandler.execute(portForward, kubeConfig != null, Gson().fromJson(context.bodyAsString, JobsListParams::class.java)))
-            }.subscribe({ output ->
-                context.response().setStatusCode(200).putHeader("content-type", "application/json").end(output)
-            }, { error ->
-                context.response().setStatusCode(500).end(makeError(error))
-            })
+            execute(context) { future ->
+                future.complete(JobsListHandler.execute(portForward, useNodePort, fromJson(context, JobsListParams::class.java)))
+            }
         }
 
         mainRouter.post("/job/run").handler { context ->
-            vertx.rxExecuteBlocking<String> { future ->
-                future.complete(JobRunHandler.execute("flink-controller", Gson().fromJson(context.bodyAsString, JobRunParams::class.java)))
-            }.subscribe({ output ->
-                context.response().setStatusCode(200).putHeader("content-type", "application/json").end(output)
-            }, { error ->
-                context.response().setStatusCode(500).end(makeError(error))
-            })
+            execute(context) { future ->
+                future.complete(JobRunHandler.execute("flink-controller", fromJson(context, JobRunParams::class.java)))
+            }
         }
 
         mainRouter.post("/job/cancel").handler { context ->
-            vertx.rxExecuteBlocking<String> { future ->
-                future.complete(JobCancelHandler.execute(portForward, kubeConfig != null, Gson().fromJson(context.bodyAsString, JobCancelParams::class.java)))
-            }.subscribe({ output ->
-                context.response().setStatusCode(200).putHeader("content-type", "application/json").end(output)
-            }, { error ->
-                context.response().setStatusCode(500).end(makeError(error))
-            })
+            execute(context) { future ->
+                future.complete(JobCancelHandler.execute(portForward, useNodePort, fromJson(context, JobCancelParams::class.java)))
+            }
         }
 
         mainRouter.post("/job/scale").handler { context ->
-            vertx.rxExecuteBlocking<String> { future ->
-                future.complete(JobScaleHandler.execute(portForward, kubeConfig != null, Gson().fromJson(context.bodyAsString, JobScaleParams::class.java)))
-            }.subscribe({ output ->
-                context.response().setStatusCode(200).putHeader("content-type", "application/json").end(output)
-            }, { error ->
-                context.response().setStatusCode(500).end(makeError(error))
-            })
+            execute(context) { future ->
+                future.complete(JobScaleHandler.execute(portForward, useNodePort, fromJson(context, JobScaleParams::class.java)))
+            }
         }
 
         mainRouter.post("/job/details").handler { context ->
-            vertx.rxExecuteBlocking<String> { future ->
-                future.complete(JobDetailsHandler.execute(portForward, kubeConfig != null, Gson().fromJson(context.bodyAsString, JobDescriptor::class.java)))
-            }.subscribe({ output ->
-                context.response().setStatusCode(200).putHeader("content-type", "application/json").end(output)
-            }, { error ->
-                context.response().setStatusCode(500).end(makeError(error))
-            })
+            execute(context) { future ->
+                future.complete(JobDetailsHandler.execute(portForward, useNodePort, fromJson(context, JobDescriptor::class.java)))
+            }
         }
 
         mainRouter.post("/job/metrics").handler { context ->
-            vertx.rxExecuteBlocking<String> { future ->
-                future.complete(JobMetricsHandler.execute(portForward, kubeConfig != null, Gson().fromJson(context.bodyAsString, JobDescriptor::class.java)))
-            }.subscribe({ output ->
-                context.response().setStatusCode(200).putHeader("content-type", "application/json").end(output)
-            }, { error ->
-                context.response().setStatusCode(500).end(makeError(error))
-            })
+            execute(context) { future ->
+                future.complete(JobMetricsHandler.execute(portForward, useNodePort, fromJson(context, JobDescriptor::class.java)))
+            }
         }
 
         mainRouter.post("/jobmanager/metrics").handler { context ->
-            vertx.rxExecuteBlocking<String> { future ->
-                future.complete(JobManagerMetricsHandler.execute(portForward, kubeConfig != null, Gson().fromJson(context.bodyAsString, ClusterDescriptor::class.java)))
-            }.subscribe({ output ->
-                context.response().setStatusCode(200).putHeader("content-type", "application/json").end(output)
-            }, { error ->
-                context.response().setStatusCode(500).end(makeError(error))
-            })
+            execute(context) { future ->
+                future.complete(JobManagerMetricsHandler.execute(portForward, useNodePort, fromJson(context, ClusterDescriptor::class.java)))
+            }
         }
 
         mainRouter.post("/taskmanagers/list").handler { context ->
-            vertx.rxExecuteBlocking<String> { future ->
-                future.complete(TaskManagersListHandler.execute(portForward, kubeConfig != null, Gson().fromJson(context.bodyAsString, ClusterDescriptor::class.java)))
-            }.subscribe({ output ->
-                context.response().setStatusCode(200).putHeader("content-type", "application/json").end(output)
-            }, { error ->
-                context.response().setStatusCode(500).end(makeError(error))
-            })
+            execute(context) { future ->
+                future.complete(TaskManagersListHandler.execute(portForward, useNodePort, fromJson(context, ClusterDescriptor::class.java)))
+            }
         }
 
         mainRouter.post("/taskmanager/details").handler { context ->
-            vertx.rxExecuteBlocking<String> { future ->
-                future.complete(TaskManagerDetailsHandler.execute(portForward, kubeConfig != null, Gson().fromJson(context.bodyAsString, TaskManagerDescriptor::class.java)))
-            }.subscribe({ output ->
-                context.response().setStatusCode(200).putHeader("content-type", "application/json").end(output)
-            }, { error ->
-                context.response().setStatusCode(500).end(makeError(error))
-            })
+            execute(context) { future ->
+                future.complete(TaskManagerDetailsHandler.execute(portForward, useNodePort, fromJson(context, TaskManagerDescriptor::class.java)))
+            }
         }
 
         mainRouter.post("/taskmanager/metrics").handler { context ->
-            vertx.rxExecuteBlocking<String> { future ->
-                future.complete(TaskManagerMetricsHandler.execute(portForward, kubeConfig != null, Gson().fromJson(context.bodyAsString, TaskManagerDescriptor::class.java)))
-            }.subscribe({ output ->
-                context.response().setStatusCode(200).putHeader("content-type", "application/json").end(output)
-            }, { error ->
-                context.response().setStatusCode(500).end(makeError(error))
-            })
+            execute(context) { future ->
+                future.complete(TaskManagerMetricsHandler.execute(portForward, useNodePort, fromJson(context, TaskManagerDescriptor::class.java)))
+            }
         }
 
         mainRouter.post("/cluster/create").handler { context ->
-            vertx.rxExecuteBlocking<String> { future ->
-                future.complete(ClusterCreateHandler.execute("flink-controller", Gson().fromJson(context.bodyAsString, ClusterConfig::class.java)))
-            }.subscribe({ output ->
-                context.response().setStatusCode(200).putHeader("content-type", "application/json").end(output)
-            }, { error ->
-                context.response().setStatusCode(500).end(makeError(error))
-            })
+            execute(context) { future ->
+                future.complete(ClusterCreateHandler.execute("flink-controller", fromJson(context, ClusterConfig::class.java)))
+            }
         }
 
         mainRouter.post("/cluster/delete").handler { context ->
-            vertx.rxExecuteBlocking<String> { future ->
-                future.complete(ClusterDeleteHandler.execute(Gson().fromJson(context.bodyAsString, ClusterDescriptor::class.java)))
-            }.subscribe({ output ->
-                context.response().setStatusCode(200).putHeader("content-type", "application/json").end(output)
-            }, { error ->
-                context.response().setStatusCode(500).end(makeError(error))
-            })
+            execute(context) { future ->
+                future.complete(ClusterDeleteHandler.execute(fromJson(context, ClusterDescriptor::class.java)))
+            }
         }
 
         mainRouter.options("/").handler { context ->
@@ -163,5 +119,15 @@ class ControllerVerticle : AbstractVerticle() {
         }
 
         return vertx.createHttpServer().requestHandler(mainRouter).rxListen(port)
+    }
+
+    private fun <T> fromJson(context: RoutingContext, clazz: Class<out T>) = Gson().fromJson(context.bodyAsString, clazz)
+
+    private fun execute(context: RoutingContext, handler: (Future<String>) -> Unit) {
+        vertx.rxExecuteBlocking<String>(handler).subscribe({ output ->
+            context.response().setStatusCode(200).putHeader("content-type", "application/json").end(output)
+        }, { error ->
+            context.response().setStatusCode(500).end(makeError(error))
+        })
     }
 }

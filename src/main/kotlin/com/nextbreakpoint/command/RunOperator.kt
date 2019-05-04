@@ -803,7 +803,7 @@ class RunOperator {
         Watch.createWatch<V1FlinkCluster>(
             Configuration.getDefaultApiClient(),
             objectApi.listNamespacedCustomObjectCall(
-                "beta.nextbreakpoint.com",
+                "nextbreakpoint.com",
                 "v1",
                 namespace,
                 "flinkclusters",

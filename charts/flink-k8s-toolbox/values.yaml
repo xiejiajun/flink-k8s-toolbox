@@ -4,5 +4,5 @@
 
 image:
   repository: nextbreakpoint/flink-k8s-toolbox
-  tag: 1.0.0-alpha
+  tag: 1.0.1-alpha
   pullPolicy: Always
