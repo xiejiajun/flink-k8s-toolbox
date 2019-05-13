@@ -7,6 +7,7 @@ import com.github.ajalt.clikt.parameters.types.float
 import com.github.ajalt.clikt.parameters.types.int
 import com.nextbreakpoint.command.*
 import com.nextbreakpoint.model.*
+import com.nextbreakpoint.operator.model.*
 import io.kubernetes.client.Configuration
 
 class FlinkK8SToolboxMain {

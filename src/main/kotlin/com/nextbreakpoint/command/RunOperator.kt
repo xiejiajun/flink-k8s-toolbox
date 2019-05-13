@@ -1,19 +1,19 @@
 package com.nextbreakpoint.command
 
-import com.google.gson.reflect.TypeToken
 import com.nextbreakpoint.handler.ClusterCreateHandler
 import com.nextbreakpoint.handler.ClusterDeleteHandler
 import com.nextbreakpoint.model.*
-import io.kubernetes.client.Configuration
+import com.nextbreakpoint.operator.*
+import com.nextbreakpoint.operator.model.ClusterConfig
+import com.nextbreakpoint.operator.ClusterConfigBuilder
+import com.nextbreakpoint.operator.model.ClusterResources
 import io.kubernetes.client.apis.AppsV1Api
 import io.kubernetes.client.apis.CoreV1Api
 import io.kubernetes.client.apis.CustomObjectsApi
 import io.kubernetes.client.models.V1Deployment
-import io.kubernetes.client.models.V1ObjectMeta
 import io.kubernetes.client.models.V1PersistentVolumeClaim
 import io.kubernetes.client.models.V1Service
 import io.kubernetes.client.models.V1StatefulSet
-import io.kubernetes.client.util.Watch
 import org.apache.log4j.Logger
 import java.net.SocketTimeoutException
 import java.util.concurrent.LinkedBlockingQueue
@@ -49,7 +49,7 @@ class RunOperator {
         thread {
             while (true) {
                 try {
-                    val watch = watchFlickClusterResources(config.namespace, objectApi)
+                    val watch = ClusterResourcesWatchFactory.createWatchFlickClusterResources(config.namespace, objectApi)
 
                     watch.forEach { resource ->
                         val clusterName = resource.`object`.spec.clusterName
@@ -79,7 +79,7 @@ class RunOperator {
         thread {
             while (true) {
                 try {
-                    val watch = watchServiceResources(config.namespace, coreApi)
+                    val watch = ClusterResourcesWatchFactory.createWatchServiceResources(config.namespace, coreApi)
 
                     watch.forEach { resource ->
                         val clusterName = resource.`object`.metadata.labels.get("cluster")
@@ -109,7 +109,7 @@ class RunOperator {
         thread {
             while (true) {
                 try {
-                    val watch = watchDeploymentResources(config.namespace, appsApi)
+                    val watch = ClusterResourcesWatchFactory.createWatchDeploymentResources(config.namespace, appsApi)
 
                     watch.forEach { resource ->
                         val clusterName = resource.`object`.metadata.labels.get("cluster")
@@ -139,7 +139,7 @@ class RunOperator {
         thread {
             while (true) {
                 try {
-                    val watch = watchStatefulSetResources(config.namespace, appsApi)
+                    val watch = ClusterResourcesWatchFactory.createWatchStatefulSetResources(config.namespace, appsApi)
 
                     watch.forEach { resource ->
                         val clusterName = resource.`object`.metadata.labels.get("cluster")
@@ -177,7 +177,7 @@ class RunOperator {
         thread {
             while (true) {
                 try {
-                    val watch = watchPermanentVolumeClaimResources(config.namespace, coreApi)
+                    val watch = ClusterResourcesWatchFactory.createWatchPermanentVolumeClaimResources(config.namespace, coreApi)
 
                     watch.forEach { resource ->
                         val clusterName = resource.`object`.metadata.labels.get("cluster")
@@ -243,19 +243,31 @@ class RunOperator {
 
             val divergentClusters = mutableMapOf<ClusterDescriptor, ClusterConfig>()
 
-            clusters.values.forEach { cluster ->
-                val clusterConfig = createClusterConfig(cluster.metadata, cluster.spec)
+            val clusterDiff = ClusterResourcesDiffEvaluator()
 
-                if (hasDiverged(
-                        clusterConfig,
-                        deployments,
-                        jobmanagerStatefulSets,
-                        taskmanagerStatefulSets,
-                        services,
-                        jobmanagerPersistentVolumeClaims,
-                        taskmanagerPersistentVolumeClaims
-                    )
-                ) {
+            clusters.values.forEach { cluster ->
+                val clusterConfig = ClusterConfigBuilder(
+                    cluster.metadata,
+                    cluster.spec
+                ).build()
+
+                val jobmnagerService = services.get(clusterConfig.descriptor)
+                val sidecarDeployment = deployments.get(clusterConfig.descriptor)
+                val jobmanagerStatefulSet = jobmanagerStatefulSets.get(clusterConfig.descriptor)
+                val taskmanagerStatefulSet = taskmanagerStatefulSets.get(clusterConfig.descriptor)
+                val jobmanagerPersistentVolumeClaim = jobmanagerPersistentVolumeClaims.get(clusterConfig.descriptor)
+                val taskmanagerPersistentVolumeClaim = taskmanagerPersistentVolumeClaims.get(clusterConfig.descriptor)
+
+                val actualResources = ClusterResources(
+                    jobmanagerService = jobmnagerService,
+                    sidecarDeployment = sidecarDeployment,
+                    jobmanagerStatefulSet = jobmanagerStatefulSet,
+                    taskmanagerStatefulSet = taskmanagerStatefulSet,
+                    jobmanagerPersistentVolumeClaim = jobmanagerPersistentVolumeClaim,
+                    taskmanagerPersistentVolumeClaim = taskmanagerPersistentVolumeClaim
+                )
+
+                if (clusterDiff.hasDiverged(clusterConfig, actualResources)) {
                     val lastUpdated = status.get(clusterConfig.descriptor)
 
                     if (lastUpdated == null) {
@@ -275,7 +287,10 @@ class RunOperator {
             }
 
             clusters.values.forEach { cluster ->
-                val clusterConfig = createClusterConfig(cluster.metadata, cluster.spec)
+                val clusterConfig = ClusterConfigBuilder(
+                    cluster.metadata,
+                    cluster.spec
+                ).build()
 
                 if (divergentClusters.containsKey(clusterConfig.descriptor)) {
                     logger.info("Deleting cluster ${clusterConfig.descriptor.name}...")
@@ -285,7 +300,10 @@ class RunOperator {
             }
 
             clusters.values.forEach { cluster ->
-                val clusterConfig = createClusterConfig(cluster.metadata, cluster.spec)
+                val clusterConfig = ClusterConfigBuilder(
+                    cluster.metadata,
+                    cluster.spec
+                ).build()
 
                 if (divergentClusters.containsKey(clusterConfig.descriptor)) {
                     logger.info("Creating cluster ${clusterConfig.descriptor.name}...")
@@ -297,7 +315,10 @@ class RunOperator {
             val clusterConfigs = mutableMapOf<ClusterDescriptor, ClusterConfig>()
 
             clusters.values.forEach { cluster ->
-                val clusterConfig = createClusterConfig(cluster.metadata, cluster.spec)
+                val clusterConfig = ClusterConfigBuilder(
+                    cluster.metadata,
+                    cluster.spec
+                ).build()
 
                 clusterConfigs.put(clusterConfig.descriptor, clusterConfig)
             }
@@ -325,575 +346,47 @@ class RunOperator {
         jobmanagerPersistentVolumeClaims: MutableMap<ClusterDescriptor, V1PersistentVolumeClaim>,
         taskmanagerPersistentVolumeClaims: MutableMap<ClusterDescriptor, V1PersistentVolumeClaim>
     ) {
-        val pendingDeleteClusters = mutableMapOf<ClusterDescriptor, ClusterDescriptor>()
+        val pendingDeleteClusters = mutableSetOf<ClusterDescriptor>()
 
-        services.forEach { descriptor, service ->
-            if (pendingDeleteClusters.get(descriptor) == null && flinkClusters.get(descriptor) == null) {
-                logger.info("Deleting orphan cluster ${descriptor.name}...")
-
-                ClusterDeleteHandler.execute(descriptor)
-
-                pendingDeleteClusters.put(descriptor, descriptor)
+        services.forEach { (descriptor, _) ->
+            if (!pendingDeleteClusters.contains(descriptor) && flinkClusters.get(descriptor) == null) {
+                pendingDeleteClusters.add(descriptor)
             }
         }
 
-        deployments.forEach { descriptor, deployment ->
-            if (pendingDeleteClusters.get(descriptor) == null && flinkClusters.get(descriptor) == null) {
-                logger.info("Deleting orphan cluster ${descriptor.name}...")
-
-                ClusterDeleteHandler.execute(descriptor)
-
-                pendingDeleteClusters.put(descriptor, descriptor)
+        deployments.forEach { (descriptor, _) ->
+            if (!pendingDeleteClusters.contains(descriptor) && flinkClusters.get(descriptor) == null) {
+                pendingDeleteClusters.add(descriptor)
             }
         }
 
-        jobmanagerStatefulSets.forEach { descriptor, statefulSet ->
-            if (pendingDeleteClusters.get(descriptor) == null && flinkClusters.get(descriptor) == null) {
-                logger.info("Deleting orphan cluster ${descriptor.name}...")
-
-                ClusterDeleteHandler.execute(descriptor)
-
-                pendingDeleteClusters.put(descriptor, descriptor)
+        jobmanagerStatefulSets.forEach { (descriptor, _) ->
+            if (!pendingDeleteClusters.contains(descriptor) && flinkClusters.get(descriptor) == null) {
+                pendingDeleteClusters.add(descriptor)
             }
         }
 
-        taskmanagerStatefulSets.forEach { descriptor, statefulSet ->
-            if (pendingDeleteClusters.get(descriptor) == null && flinkClusters.get(descriptor) == null) {
-                logger.info("Deleting orphan cluster ${descriptor.name}...")
-
-                ClusterDeleteHandler.execute(descriptor)
-
-                pendingDeleteClusters.put(descriptor, descriptor)
+        taskmanagerStatefulSets.forEach { (descriptor, _) ->
+            if (!pendingDeleteClusters.contains(descriptor) && flinkClusters.get(descriptor) == null) {
+                pendingDeleteClusters.add(descriptor)
             }
         }
 
-        jobmanagerPersistentVolumeClaims.forEach { descriptor, persistentVolumeClaims ->
-            if (pendingDeleteClusters.get(descriptor) == null && flinkClusters.get(descriptor) == null) {
-                logger.info("Deleting orphan cluster ${descriptor.name}...")
-
-                ClusterDeleteHandler.execute(descriptor)
-
-                pendingDeleteClusters.put(descriptor, descriptor)
+        jobmanagerPersistentVolumeClaims.forEach { (descriptor, _) ->
+            if (!pendingDeleteClusters.contains(descriptor) && flinkClusters.get(descriptor) == null) {
+                pendingDeleteClusters.add(descriptor)
             }
         }
 
-        taskmanagerPersistentVolumeClaims.forEach { descriptor, persistentVolumeClaims ->
-            if (pendingDeleteClusters.get(descriptor) == null && flinkClusters.get(descriptor) == null) {
-                logger.info("Deleting orphan cluster ${descriptor.name}...")
-
-                ClusterDeleteHandler.execute(descriptor)
-
-                pendingDeleteClusters.put(descriptor, descriptor)
+        taskmanagerPersistentVolumeClaims.forEach { (descriptor, _) ->
+            if (!pendingDeleteClusters.contains(descriptor) && flinkClusters.get(descriptor) == null) {
+                pendingDeleteClusters.add(descriptor)
             }
+        }
+
+        pendingDeleteClusters.forEach {
+            logger.info("Deleting orphan cluster ${it.name}...")
+            ClusterDeleteHandler.execute(it)
         }
     }
-
-    private fun hasDiverged(
-        targetClusterConfig: ClusterConfig,
-        deployments: MutableMap<ClusterDescriptor, V1Deployment>,
-        jobmanagerStatefulSets: MutableMap<ClusterDescriptor, V1StatefulSet>,
-        taskmanagerStatefulSets: MutableMap<ClusterDescriptor, V1StatefulSet>,
-        services: MutableMap<ClusterDescriptor, V1Service>,
-        jobmanagerPersistentVolumeClaims: MutableMap<ClusterDescriptor, V1PersistentVolumeClaim>,
-        taskmanagerPersistentVolumeClaims: MutableMap<ClusterDescriptor, V1PersistentVolumeClaim>
-    ) : Boolean {
-        val service = services.get(targetClusterConfig.descriptor)
-        val deployment = deployments.get(targetClusterConfig.descriptor)
-        val jobmanagerStatefulSet = jobmanagerStatefulSets.get(targetClusterConfig.descriptor)
-        val taskmanagerStatefulSet = taskmanagerStatefulSets.get(targetClusterConfig.descriptor)
-        val jobmanagerPersistentVolumeClaim = jobmanagerPersistentVolumeClaims.get(targetClusterConfig.descriptor)
-        val taskmanagerPersistentVolumeClaim = taskmanagerPersistentVolumeClaims.get(targetClusterConfig.descriptor)
-
-        if (service == null) {
-            return true
-        }
-
-        if (deployment == null) {
-            return true
-        }
-
-        if (jobmanagerStatefulSet == null) {
-            return true
-        }
-
-        if (taskmanagerStatefulSet == null) {
-            return true
-        }
-
-        if (jobmanagerPersistentVolumeClaim == null) {
-            return true
-        }
-
-        if (taskmanagerPersistentVolumeClaim == null) {
-            return true
-        }
-
-        if (deployment.spec.template.spec.containers.size != 1) {
-            return true
-        }
-
-        if (deployment.metadata.labels.get("cluster") == null) {
-            return true
-        }
-
-        if (deployment.metadata.labels.get("component") == null) {
-            return true
-        }
-
-        if (deployment.metadata.labels.get("environment") == null) {
-            return true
-        }
-
-        if (service.metadata.labels.get("cluster") == null) {
-            return true
-        }
-
-        if (service.metadata.labels.get("role") == null) {
-            return true
-        }
-
-        if (service.metadata.labels.get("component") == null) {
-            return true
-        }
-
-        if (service.metadata.labels.get("environment") == null) {
-            return true
-        }
-
-        if (jobmanagerStatefulSet.metadata.labels.get("cluster") == null) {
-            return true
-        }
-
-        if (jobmanagerStatefulSet.metadata.labels.get("role") == null) {
-            return true
-        }
-
-        if (jobmanagerStatefulSet.metadata.labels.get("component") == null) {
-            return true
-        }
-
-        if (jobmanagerStatefulSet.metadata.labels.get("environment") == null) {
-            return true
-        }
-
-        if (taskmanagerStatefulSet.metadata.labels.get("cluster") == null) {
-            return true
-        }
-
-        if (taskmanagerStatefulSet.metadata.labels.get("role") == null) {
-            return true
-        }
-
-        if (taskmanagerStatefulSet.metadata.labels.get("component") == null) {
-            return true
-        }
-
-        if (taskmanagerStatefulSet.metadata.labels.get("environment") == null) {
-            return true
-        }
-
-        if (jobmanagerPersistentVolumeClaim.metadata.labels.get("cluster") == null) {
-            return true
-        }
-
-        if (jobmanagerPersistentVolumeClaim.metadata.labels.get("role") == null) {
-            return true
-        }
-
-        if (jobmanagerPersistentVolumeClaim.metadata.labels.get("component") == null) {
-            return true
-        }
-
-        if (jobmanagerPersistentVolumeClaim.metadata.labels.get("environment") == null) {
-            return true
-        }
-
-        if (taskmanagerPersistentVolumeClaim.metadata.labels.get("cluster") == null) {
-            return true
-        }
-
-        if (taskmanagerPersistentVolumeClaim.metadata.labels.get("role") == null) {
-            return true
-        }
-
-        if (taskmanagerPersistentVolumeClaim.metadata.labels.get("component") == null) {
-            return true
-        }
-
-        if (taskmanagerPersistentVolumeClaim.metadata.labels.get("environment") == null) {
-            return true
-        }
-
-        val sidecarImage = deployment.spec.template.spec.containers.get(0).image
-        val sidecarPullPolicy = deployment.spec.template.spec.containers.get(0).imagePullPolicy
-        val sidecarServiceAccount = deployment.spec.template.spec.serviceAccount
-
-        val containerArguments = deployment.spec.template.spec.containers.get(0).args
-
-        if (containerArguments.get(0) != "sidecar") {
-            logger.warn("Sidecar argument are: ${containerArguments.joinToString(" ")}}")
-            return true
-        }
-
-        if (containerArguments.get(1) != "submit" && containerArguments.get(1) != "watch") {
-            logger.warn("Sidecar argument are: ${containerArguments.joinToString(" ")}}")
-            return true
-        }
-
-        val sidecarNamespace = containerArguments.filter{ it.startsWith("--namespace") }.map { it.substringAfter("=") }.firstOrNull()
-        val sidecarEnvironment = containerArguments.filter{ it.startsWith("--environment") }.map { it.substringAfter("=") }.firstOrNull()
-        val sidecarClusterName = containerArguments.filter{ it.startsWith("--cluster-name") }.map { it.substringAfter("=") }.firstOrNull()
-        val sidecarJarPath = containerArguments.filter{ it.startsWith("--jar-path") }.map { it.substringAfter("=") }.firstOrNull()
-        val sidecarClassName = containerArguments.filter{ it.startsWith("--class-name") }.map { it.substringAfter("=") }.firstOrNull()
-        val sidecarSavepoint = containerArguments.filter{ it.startsWith("--savepoint") }.map { it.substringAfter("=") }.firstOrNull()
-        val sidecarParallelism = containerArguments.filter{ it.startsWith("--parallelism") }.map { it.substringAfter("=") }.firstOrNull()
-
-        if (sidecarNamespace == null || sidecarNamespace != targetClusterConfig.descriptor.namespace) {
-            logger.warn("Sidecar argument are: ${containerArguments.joinToString(" ")}}")
-            return true
-        }
-
-        if (sidecarEnvironment == null || sidecarEnvironment != targetClusterConfig.descriptor.environment) {
-            logger.warn("Sidecar argument are: ${containerArguments.joinToString(" ")}}")
-            return true
-        }
-
-        if (sidecarClusterName == null || sidecarClusterName != targetClusterConfig.descriptor.name) {
-            logger.warn("Sidecar argument are: ${containerArguments.joinToString(" ")}}")
-            return true
-        }
-
-        if (containerArguments.get(1) == "submit" && sidecarJarPath == null) {
-            logger.warn("Sidecar argument are: ${containerArguments.joinToString(" ")}}")
-            return true
-        }
-
-        val sidecarArguments = containerArguments.filter{ it.startsWith("--argument") }.map { it.substringAfter("=") }.toList()
-
-        val pullSecrets = if (deployment.spec.template.spec.imagePullSecrets != null && !deployment.spec.template.spec.imagePullSecrets.isEmpty()) deployment.spec.template.spec.imagePullSecrets.get(0).name else null
-
-        if (jobmanagerStatefulSet.spec.template.spec.containers.size != 1) {
-            return true
-        }
-
-        val jobmanagerImage = jobmanagerStatefulSet.spec.template.spec.containers.get(0).image
-        val jobmanagerPullPolicy = jobmanagerStatefulSet.spec.template.spec.containers.get(0).imagePullPolicy
-        val jobmanagerServiceAccount = jobmanagerStatefulSet.spec.template.spec.serviceAccount
-
-        val jobmanagerCpuQuantity = jobmanagerStatefulSet.spec.template.spec.containers.get(0).resources.limits.get("cpu")
-
-        if (jobmanagerCpuQuantity == null) {
-            return true
-        }
-
-        val jobmanagerCpu = jobmanagerCpuQuantity.number.toFloat()
-
-        if (jobmanagerStatefulSet.spec.volumeClaimTemplates.size != 1) {
-            return true
-        }
-
-        val jobmanagerStorageClassName = jobmanagerStatefulSet.spec.volumeClaimTemplates.get(0).spec.storageClassName
-        val jobmanagerStorageSizeQuantity = jobmanagerStatefulSet.spec.volumeClaimTemplates.get(0).spec.resources.requests.get("storage")
-
-        if (jobmanagerStorageSizeQuantity == null) {
-            return true
-        }
-
-        val jobmanagerStorageSize = jobmanagerStorageSizeQuantity.number.toInt()
-
-        if (taskmanagerStatefulSet.spec.template.spec.containers.size != 1) {
-            return true
-        }
-
-        val taskmanagerImage = taskmanagerStatefulSet.spec.template.spec.containers.get(0).image
-        val taskmanagerPullPolicy = taskmanagerStatefulSet.spec.template.spec.containers.get(0).imagePullPolicy
-        val taskmanagerServiceAccount = taskmanagerStatefulSet.spec.template.spec.serviceAccount
-
-        val taskmanagerCpuQuantity = taskmanagerStatefulSet.spec.template.spec.containers.get(0).resources.limits.get("cpu")
-
-        if (taskmanagerCpuQuantity == null) {
-            return true
-        }
-
-        val taskmanagerCpu = taskmanagerCpuQuantity.number.toFloat()
-
-        if (taskmanagerStatefulSet.spec.volumeClaimTemplates.size != 1) {
-            return true
-        }
-
-        val taskmanagerStorageClassName = taskmanagerStatefulSet.spec.volumeClaimTemplates.get(0).spec.storageClassName
-        val taskmanagerStorageSizeQuantity = taskmanagerStatefulSet.spec.volumeClaimTemplates.get(0).spec.resources.requests.get("storage")
-
-        if (taskmanagerStorageSizeQuantity == null) {
-            return true
-        }
-
-        val taskmanagerStorageSize = taskmanagerStorageSizeQuantity.number.toInt()
-
-        val taskmanagerReplicas = taskmanagerStatefulSet.spec.replicas
-
-        val environment = jobmanagerStatefulSet.metadata.labels.get("environment").orEmpty()
-
-        val jobmanagerMemoryEnvVar = jobmanagerStatefulSet.spec.template.spec.containers.get(0).env.filter { it.name == "FLINK_JM_HEAP" }.firstOrNull()
-
-        if (jobmanagerMemoryEnvVar == null) {
-            return true
-        }
-
-        val taskmanagerMemoryEnvVar = taskmanagerStatefulSet.spec.template.spec.containers.get(0).env.filter { it.name == "FLINK_TM_HEAP" }.firstOrNull()
-
-        if (taskmanagerMemoryEnvVar == null) {
-            return true
-        }
-
-        val taskmanagerTaskSlotsEnvVar = taskmanagerStatefulSet.spec.template.spec.containers.get(0).env.filter { it.name == "TASK_MANAGER_NUMBER_OF_TASK_SLOTS" }.firstOrNull()
-
-        if (taskmanagerTaskSlotsEnvVar == null) {
-            return true
-        }
-
-        val jobmanagerEnvironmentVariables = jobmanagerStatefulSet.spec.template.spec.containers.get(0).env
-            .filter { it.name != "JOB_MANAGER_RPC_ADDRESS" }
-            .filter { it.name != "FLINK_JM_HEAP" }
-            .filter { it.name != "FLINK_ENVIRONMENT" }
-            .filter { it.name != "POD_NAMESPACE" }
-            .filter { it.name != "POD_NAME" }
-            .map { EnvironmentVariable(it.name, it.value) }
-            .toList()
-
-        val taskmanagerEnvironmentVariables = taskmanagerStatefulSet.spec.template.spec.containers.get(0).env
-            .filter { it.name != "JOB_MANAGER_RPC_ADDRESS" }
-            .filter { it.name != "FLINK_TM_HEAP" }
-            .filter { it.name != "FLINK_ENVIRONMENT" }
-            .filter { it.name != "TASK_MANAGER_NUMBER_OF_TASK_SLOTS" }
-            .filter { it.name != "POD_NAMESPACE" }
-            .filter { it.name != "POD_NAME" }
-            .map { EnvironmentVariable(it.name, it.value) }
-            .toList()
-
-        val jobmanagerMemory = jobmanagerMemoryEnvVar.value.toInt()
-
-        val taskmanagerMemory = taskmanagerMemoryEnvVar.value.toInt()
-
-        val taskmanagerTaskSlots = taskmanagerTaskSlotsEnvVar.value.toInt()
-
-        val serviceMode = service.spec.type
-
-        val clusterConfig = ClusterConfig(
-            descriptor = ClusterDescriptor(
-                namespace = targetClusterConfig.descriptor.namespace,
-                name = targetClusterConfig.descriptor.name,
-                environment = environment
-            ),
-            jobmanager = JobManagerConfig(
-                image = jobmanagerImage,
-                pullSecrets = pullSecrets,
-                pullPolicy = jobmanagerPullPolicy,
-                serviceMode = serviceMode,
-                serviceAccount = jobmanagerServiceAccount,
-                environmentVariables = jobmanagerEnvironmentVariables,
-                resources = ResourcesConfig(
-                    cpus = jobmanagerCpu,
-                    memory = jobmanagerMemory
-                ),
-                storage = StorageConfig(
-                    storageClass = jobmanagerStorageClassName,
-                    size = jobmanagerStorageSize
-                )
-            ),
-            taskmanager = TaskManagerConfig(
-                image = taskmanagerImage,
-                pullSecrets = pullSecrets,
-                pullPolicy = taskmanagerPullPolicy,
-                serviceAccount = taskmanagerServiceAccount,
-                environmentVariables = taskmanagerEnvironmentVariables,
-                replicas = taskmanagerReplicas,
-                taskSlots = taskmanagerTaskSlots,
-                resources = ResourcesConfig(
-                    cpus = taskmanagerCpu,
-                    memory = taskmanagerMemory
-                ),
-                storage = StorageConfig(
-                    storageClass = taskmanagerStorageClassName,
-                    size = taskmanagerStorageSize
-                )
-            ),
-            sidecar = SidecarConfig(
-                image = sidecarImage,
-                pullSecrets = pullSecrets,
-                pullPolicy = sidecarPullPolicy,
-                serviceAccount = sidecarServiceAccount,
-                className = sidecarClassName,
-                jarPath = sidecarJarPath,
-                savepoint = sidecarSavepoint,
-                arguments = sidecarArguments.joinToString(" "),
-                parallelism = sidecarParallelism?.toInt() ?: 1
-            )
-        )
-
-        val diverged = clusterConfig.equals(targetClusterConfig).not()
-
-        if (diverged) {
-            logger.info("Current config: $clusterConfig")
-            logger.info("Desired config: $targetClusterConfig")
-        }
-
-        return diverged
-    }
-
-    private fun createClusterConfig(
-        metadata: V1ObjectMeta,
-        spec: V1FlinkClusterSpec
-    ): ClusterConfig {
-        val clusterConfig = ClusterConfig(
-            descriptor = ClusterDescriptor(
-                namespace = metadata.namespace,
-                name = metadata.name,
-                environment = spec.environment ?: "test"
-            ),
-            jobmanager = JobManagerConfig(
-                image = spec.flinkImage,
-                pullSecrets = spec.pullSecrets,
-                pullPolicy = spec.pullPolicy ?: "Always",
-                serviceMode = spec.serviceMode ?: "NodePort",
-                serviceAccount = spec.jobmanagerServiceAccount ?: "default",
-                environmentVariables = spec.jobmanagerEnvironmentVariables?.map { EnvironmentVariable(it.name, it.value) }?.toList() ?: listOf(),
-                resources = ResourcesConfig(
-                    cpus = spec.jobmanagerCpus ?: 1f,
-                    memory = spec.jobmanagerMemory ?: 512
-                ),
-                storage = StorageConfig(
-                    storageClass = spec.jobmanagerStorageClass ?: "standard",
-                    size = spec.jobmanagerStorageSize ?: 2
-                )
-            ),
-            taskmanager = TaskManagerConfig(
-                image = spec.flinkImage,
-                pullSecrets = spec.pullSecrets,
-                pullPolicy = spec.pullPolicy ?: "Always",
-                serviceAccount = spec.taskmanagerServiceAccount ?: "default",
-                environmentVariables = spec.taskmanagerEnvironmentVariables?.map { EnvironmentVariable(it.name, it.value) }?.toList() ?: listOf(),
-                replicas = spec.taskmanagerReplicas ?: 1,
-                taskSlots = spec.taskmanagerTaskSlots ?: 1,
-                resources = ResourcesConfig(
-                    cpus = spec.taskmanagerCpus ?: 1f,
-                    memory = spec.taskmanagerMemory ?: 1024
-                ),
-                storage = StorageConfig(
-                    storageClass = spec.taskmanagerStorageClass ?: "standard",
-                    size = spec.taskmanagerStorageSize ?: 2
-                )
-            ),
-            sidecar = SidecarConfig(
-                image = spec.sidecarImage,
-                pullSecrets = spec.pullSecrets,
-                pullPolicy = spec.pullPolicy ?: "Always",
-                serviceAccount = spec.sidecarServiceAccount ?: "default",
-                className = spec.sidecarClassName,
-                jarPath = spec.sidecarJarPath,
-                savepoint = spec.sidecarSavepoint,
-                arguments = spec.sidecarArguments?.joinToString(" "),
-                parallelism = spec.sidecarParallelism ?: 1
-            )
-        )
-        return clusterConfig
-    }
-
-    private fun watchFlickClusterResources(namespace: String, objectApi: CustomObjectsApi): Watch<V1FlinkCluster> =
-        Watch.createWatch<V1FlinkCluster>(
-            Configuration.getDefaultApiClient(),
-            objectApi.listNamespacedCustomObjectCall(
-                "nextbreakpoint.com",
-                "v1",
-                namespace,
-                "flinkclusters",
-                null,
-                null,
-                null,
-                true,
-                null,
-                null
-            ),
-            object : TypeToken<Watch.Response<V1FlinkCluster>>() {}.type
-        )
-
-    private fun watchServiceResources(namespace: String, coreApi: CoreV1Api): Watch<V1Service> =
-        Watch.createWatch<V1Service>(
-            Configuration.getDefaultApiClient(),
-            coreApi.listNamespacedServiceCall(
-                namespace,
-                null,
-                null,
-                null,
-                null,
-                "component=flink,owner=flink-operator",
-                null,
-                null,
-                600,
-                true,
-                null,
-                null
-            ),
-            object : TypeToken<Watch.Response<V1Service>>() {}.type
-        )
-
-    private fun watchDeploymentResources(namespace: String, appsApi: AppsV1Api): Watch<V1Deployment> =
-        Watch.createWatch<V1Deployment>(
-            Configuration.getDefaultApiClient(),
-            appsApi.listNamespacedDeploymentCall(
-                namespace,
-                null,
-                null,
-                null,
-                null,
-                "component=flink,owner=flink-operator",
-                null,
-                null,
-                600,
-                true,
-                null,
-                null
-            ),
-            object : TypeToken<Watch.Response<V1Deployment>>() {}.type
-        )
-
-    private fun watchStatefulSetResources(namespace: String, appsApi: AppsV1Api): Watch<V1StatefulSet> =
-        Watch.createWatch<V1StatefulSet>(
-            Configuration.getDefaultApiClient(),
-            appsApi.listNamespacedStatefulSetCall(
-                namespace,
-                null,
-                null,
-                null,
-                null,
-                "component=flink,owner=flink-operator",
-                null,
-                null,
-                600,
-                true,
-                null,
-                null
-            ),
-            object : TypeToken<Watch.Response<V1StatefulSet>>() {}.type
-        )
-
-    private fun watchPermanentVolumeClaimResources(namespace: String, coreApi: CoreV1Api): Watch<V1PersistentVolumeClaim> =
-        Watch.createWatch<V1PersistentVolumeClaim>(
-            Configuration.getDefaultApiClient(),
-            coreApi.listNamespacedPersistentVolumeClaimCall(
-                namespace,
-                null,
-                null,
-                null,
-                null,
-                "component=flink,owner=flink-operator",
-                null,
-                null,
-                600,
-                true,
-                null,
-                null
-            ),
-            object : TypeToken<Watch.Response<V1PersistentVolumeClaim>>() {}.type
-        )
 }

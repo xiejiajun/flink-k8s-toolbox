@@ -4,6 +4,7 @@ import com.google.gson.Gson
 import com.nextbreakpoint.CommandUtils.createKubernetesClient
 import com.nextbreakpoint.handler.*
 import com.nextbreakpoint.model.*
+import com.nextbreakpoint.operator.model.ClusterConfig
 import io.kubernetes.client.Configuration
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.handler.LoggerFormat

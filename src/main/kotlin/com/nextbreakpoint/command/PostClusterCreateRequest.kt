@@ -2,7 +2,7 @@ package com.nextbreakpoint.command
 
 import com.nextbreakpoint.CommandUtils.createWebClient
 import com.nextbreakpoint.model.ApiParams
-import com.nextbreakpoint.model.ClusterConfig
+import com.nextbreakpoint.operator.model.ClusterConfig
 
 class PostClusterCreateRequest {
     fun run(apiParams: ApiParams, clusterConfig: ClusterConfig) {
