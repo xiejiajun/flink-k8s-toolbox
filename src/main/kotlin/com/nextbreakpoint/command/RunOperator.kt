@@ -14,6 +14,7 @@ import io.kubernetes.client.models.V1Deployment
 import io.kubernetes.client.models.V1PersistentVolumeClaim
 import io.kubernetes.client.models.V1Service
 import io.kubernetes.client.models.V1StatefulSet
+import io.kubernetes.client.util.Watch
 import org.apache.log4j.Logger
 import java.net.SocketTimeoutException
 import java.util.concurrent.LinkedBlockingQueue
@@ -23,11 +24,11 @@ import kotlin.concurrent.thread
 
 class RunOperator {
     companion object {
-        val logger = Logger.getLogger(RunOperator::class.simpleName)
+        val logger: Logger = Logger.getLogger(RunOperator::class.simpleName)
     }
 
     private val sharedLock = Semaphore(1)
-    private val queue = LinkedBlockingQueue<String>()
+    private val queue = LinkedBlockingQueue<Any>()
     private val clusters = mutableMapOf<ClusterDescriptor, V1FlinkCluster>()
     private val status = mutableMapOf<ClusterDescriptor, Long>()
     private val services = mutableMapOf<ClusterDescriptor, V1Service>()
@@ -40,179 +41,9 @@ class RunOperator {
     fun run(config: OperatorConfig) {
         RunController.logger.info("Launching operator...")
 
-        val objectApi = CustomObjectsApi()
-
-        val coreApi = CoreV1Api()
-
-        val appsApi = AppsV1Api()
-
-        thread {
-            while (true) {
-                try {
-                    val watch = ClusterResourcesWatchFactory.createWatchFlickClusterResources(config.namespace, objectApi)
-
-                    watch.forEach { resource ->
-                        val clusterName = resource.`object`.spec.clusterName
-                        val environment = resource.`object`.spec.environment
-                        if (clusterName != null && environment != null) {
-                            sharedLock.acquire()
-                            when (resource.type) {
-                                "ADDED", "MODIFIED" -> clusters.put(ClusterDescriptor(namespace = config.namespace, name = clusterName, environment = environment), resource.`object`)
-                                "DELETED" -> clusters.remove(ClusterDescriptor(namespace = config.namespace, name = clusterName, environment = environment))
-                            }
-                            queue.add(resource.`object`.kind)
-                            sharedLock.release()
-                        }
-                    }
-                } catch (e : InterruptedException) {
-                    break
-                } catch (e : RuntimeException) {
-                    if (!(e.cause is SocketTimeoutException)) {
-                        e.printStackTrace()
-                    }
-                } catch (e : Exception) {
-                    e.printStackTrace()
-                }
-            }
-        }
-
-        thread {
-            while (true) {
-                try {
-                    val watch = ClusterResourcesWatchFactory.createWatchServiceResources(config.namespace, coreApi)
-
-                    watch.forEach { resource ->
-                        val clusterName = resource.`object`.metadata.labels.get("cluster")
-                        val environment = resource.`object`.metadata.labels.get("environment")
-                        if (clusterName != null && environment != null) {
-                            sharedLock.acquire()
-                            when (resource.type) {
-                                "ADDED", "MODIFIED" -> services.put(ClusterDescriptor(namespace = config.namespace, name = clusterName, environment = environment), resource.`object`)
-                                "DELETED" -> services.remove(ClusterDescriptor(namespace = config.namespace, name = clusterName, environment = environment))
-                            }
-                            queue.add(resource.`object`.kind)
-                            sharedLock.release()
-                        }
-                    }
-                } catch (e : InterruptedException) {
-                    break
-                } catch (e : RuntimeException) {
-                    if (!(e.cause is SocketTimeoutException)) {
-                        e.printStackTrace()
-                    }
-                } catch (e : Exception) {
-                    e.printStackTrace()
-                }
-            }
-        }
-
-        thread {
-            while (true) {
-                try {
-                    val watch = ClusterResourcesWatchFactory.createWatchDeploymentResources(config.namespace, appsApi)
-
-                    watch.forEach { resource ->
-                        val clusterName = resource.`object`.metadata.labels.get("cluster")
-                        val environment = resource.`object`.metadata.labels.get("environment")
-                        if (clusterName != null && environment != null) {
-                            sharedLock.acquire()
-                            when (resource.type) {
-                                "ADDED", "MODIFIED" -> deployments.put(ClusterDescriptor(namespace = config.namespace, name = clusterName, environment = environment), resource.`object`)
-                                "DELETED" -> deployments.remove(ClusterDescriptor(namespace = config.namespace, name = clusterName, environment = environment))
-                            }
-                            queue.add(resource.`object`.kind)
-                            sharedLock.release()
-                        }
-                    }
-                } catch (e : InterruptedException) {
-                    break
-                } catch (e : RuntimeException) {
-                    if (!(e.cause is SocketTimeoutException)) {
-                        e.printStackTrace()
-                    }
-                } catch (e : Exception) {
-                    e.printStackTrace()
-                }
-            }
-        }
-
-        thread {
-            while (true) {
-                try {
-                    val watch = ClusterResourcesWatchFactory.createWatchStatefulSetResources(config.namespace, appsApi)
-
-                    watch.forEach { resource ->
-                        val clusterName = resource.`object`.metadata.labels.get("cluster")
-                        val environment = resource.`object`.metadata.labels.get("environment")
-                        val role = resource.`object`.metadata.labels.get("role")
-                        if (clusterName != null && environment != null && role != null) {
-                            sharedLock.acquire()
-                            if (role.equals("jobmanager")) {
-                                when (resource.type) {
-                                    "ADDED", "MODIFIED" -> jobmanagerStatefulSets.put(ClusterDescriptor(namespace = config.namespace, name = clusterName, environment = environment), resource.`object`)
-                                    "DELETED" -> jobmanagerStatefulSets.remove(ClusterDescriptor(namespace = config.namespace, name = clusterName, environment = environment))
-                                }
-                            } else {
-                                when (resource.type) {
-                                    "ADDED", "MODIFIED" -> taskmanagerStatefulSets.put(ClusterDescriptor(namespace = config.namespace, name = clusterName, environment = environment), resource.`object`)
-                                    "DELETED" -> taskmanagerStatefulSets.remove(ClusterDescriptor(namespace = config.namespace, name = clusterName, environment = environment))
-                                }
-                            }
-                            queue.add(resource.`object`.kind)
-                            sharedLock.release()
-                        }
-                    }
-                } catch (e : InterruptedException) {
-                    break
-                } catch (e : RuntimeException) {
-                    if (!(e.cause is SocketTimeoutException)) {
-                        e.printStackTrace()
-                    }
-                } catch (e : Exception) {
-                    e.printStackTrace()
-                }
-            }
-        }
-
-        thread {
-            while (true) {
-                try {
-                    val watch = ClusterResourcesWatchFactory.createWatchPermanentVolumeClaimResources(config.namespace, coreApi)
-
-                    watch.forEach { resource ->
-                        val clusterName = resource.`object`.metadata.labels.get("cluster")
-                        val environment = resource.`object`.metadata.labels.get("environment")
-                        val role = resource.`object`.metadata.labels.get("role")
-                        if (clusterName != null && environment != null && role != null) {
-                            sharedLock.acquire()
-                            if (role.equals("jobmanager")) {
-                                when (resource.type) {
-                                    "ADDED", "MODIFIED" -> jobmanagerPersistentVolumeClaims.put(ClusterDescriptor(namespace = config.namespace, name = clusterName, environment = environment), resource.`object`)
-                                    "DELETED" -> jobmanagerPersistentVolumeClaims.remove(ClusterDescriptor(namespace = config.namespace, name = clusterName, environment = environment))
-                                }
-                            } else {
-                                when (resource.type) {
-                                    "ADDED", "MODIFIED" -> taskmanagerPersistentVolumeClaims.put(ClusterDescriptor(namespace = config.namespace, name = clusterName, environment = environment), resource.`object`)
-                                    "DELETED" -> taskmanagerPersistentVolumeClaims.remove(ClusterDescriptor(namespace = config.namespace, name = clusterName, environment = environment))
-                                }
-                            }
-                            queue.add(resource.`object`.kind)
-                            sharedLock.release()
-                        }
-                    }
-                } catch (e : InterruptedException) {
-                    break
-                } catch (e : RuntimeException) {
-                    if (!(e.cause is SocketTimeoutException)) {
-                        e.printStackTrace()
-                    }
-                } catch (e : Exception) {
-                    e.printStackTrace()
-                }
-            }
-        }
-
         try {
+            startWatching(config)
+
             Thread.sleep(10000L)
 
             while (true) {
@@ -241,16 +72,18 @@ class RunOperator {
         try {
             logger.info("Found ${clusters.size} Flink Cluster resource${if (clusters.size == 1) "" else "s"}")
 
-            val divergentClusters = mutableMapOf<ClusterDescriptor, ClusterConfig>()
+            val resourcesDiffEvaluator = ClusterResourcesDiffEvaluator()
 
-            val clusterDiff = ClusterResourcesDiffEvaluator()
-
-            clusters.values.forEach { cluster ->
-                val clusterConfig = ClusterConfigBuilder(
+            val actualClusterConfigs = clusters.values.map { cluster ->
+                ClusterConfigBuilder(
                     cluster.metadata,
                     cluster.spec
                 ).build()
+            }.toList()
 
+            val divergentClusters = mutableMapOf<ClusterDescriptor, ClusterConfig>()
+
+            actualClusterConfigs.forEach { clusterConfig ->
                 val jobmnagerService = services.get(clusterConfig.descriptor)
                 val sidecarDeployment = deployments.get(clusterConfig.descriptor)
                 val jobmanagerStatefulSet = jobmanagerStatefulSets.get(clusterConfig.descriptor)
@@ -267,7 +100,7 @@ class RunOperator {
                     taskmanagerPersistentVolumeClaim = taskmanagerPersistentVolumeClaim
                 )
 
-                if (clusterDiff.hasDiverged(clusterConfig, actualResources)) {
+                if (resourcesDiffEvaluator.hasDiverged(clusterConfig, actualResources)) {
                     val lastUpdated = status.get(clusterConfig.descriptor)
 
                     if (lastUpdated == null) {
@@ -286,12 +119,7 @@ class RunOperator {
                 }
             }
 
-            clusters.values.forEach { cluster ->
-                val clusterConfig = ClusterConfigBuilder(
-                    cluster.metadata,
-                    cluster.spec
-                ).build()
-
+            actualClusterConfigs.forEach { clusterConfig ->
                 if (divergentClusters.containsKey(clusterConfig.descriptor)) {
                     logger.info("Deleting cluster ${clusterConfig.descriptor.name}...")
 
@@ -299,12 +127,7 @@ class RunOperator {
                 }
             }
 
-            clusters.values.forEach { cluster ->
-                val clusterConfig = ClusterConfigBuilder(
-                    cluster.metadata,
-                    cluster.spec
-                ).build()
-
+            actualClusterConfigs.forEach { clusterConfig ->
                 if (divergentClusters.containsKey(clusterConfig.descriptor)) {
                     logger.info("Creating cluster ${clusterConfig.descriptor.name}...")
 
@@ -312,20 +135,13 @@ class RunOperator {
                 }
             }
 
-            val clusterConfigs = mutableMapOf<ClusterDescriptor, ClusterConfig>()
-
-            clusters.values.forEach { cluster ->
-                val clusterConfig = ClusterConfigBuilder(
-                    cluster.metadata,
-                    cluster.spec
-                ).build()
-
-                clusterConfigs.put(clusterConfig.descriptor, clusterConfig)
-            }
+            val clusterConfigs = actualClusterConfigs.map {
+                clusterConfig -> clusterConfig.descriptor to clusterConfig
+            }.toMap()
 
             deleteOrphans(
-                services,
                 clusterConfigs,
+                services,
                 deployments,
                 jobmanagerStatefulSets,
                 taskmanagerStatefulSets,
@@ -338,8 +154,8 @@ class RunOperator {
     }
 
     private fun deleteOrphans(
+        clusters: Map<ClusterDescriptor, ClusterConfig>,
         services: MutableMap<ClusterDescriptor, V1Service>,
-        flinkClusters: MutableMap<ClusterDescriptor, ClusterConfig>,
         deployments: MutableMap<ClusterDescriptor, V1Deployment>,
         jobmanagerStatefulSets: MutableMap<ClusterDescriptor, V1StatefulSet>,
         taskmanagerStatefulSets: MutableMap<ClusterDescriptor, V1StatefulSet>,
@@ -349,37 +165,37 @@ class RunOperator {
         val pendingDeleteClusters = mutableSetOf<ClusterDescriptor>()
 
         services.forEach { (descriptor, _) ->
-            if (!pendingDeleteClusters.contains(descriptor) && flinkClusters.get(descriptor) == null) {
+            if (!pendingDeleteClusters.contains(descriptor) && clusters.get(descriptor) == null) {
                 pendingDeleteClusters.add(descriptor)
             }
         }
 
         deployments.forEach { (descriptor, _) ->
-            if (!pendingDeleteClusters.contains(descriptor) && flinkClusters.get(descriptor) == null) {
+            if (!pendingDeleteClusters.contains(descriptor) && clusters.get(descriptor) == null) {
                 pendingDeleteClusters.add(descriptor)
             }
         }
 
         jobmanagerStatefulSets.forEach { (descriptor, _) ->
-            if (!pendingDeleteClusters.contains(descriptor) && flinkClusters.get(descriptor) == null) {
+            if (!pendingDeleteClusters.contains(descriptor) && clusters.get(descriptor) == null) {
                 pendingDeleteClusters.add(descriptor)
             }
         }
 
         taskmanagerStatefulSets.forEach { (descriptor, _) ->
-            if (!pendingDeleteClusters.contains(descriptor) && flinkClusters.get(descriptor) == null) {
+            if (!pendingDeleteClusters.contains(descriptor) && clusters.get(descriptor) == null) {
                 pendingDeleteClusters.add(descriptor)
             }
         }
 
         jobmanagerPersistentVolumeClaims.forEach { (descriptor, _) ->
-            if (!pendingDeleteClusters.contains(descriptor) && flinkClusters.get(descriptor) == null) {
+            if (!pendingDeleteClusters.contains(descriptor) && clusters.get(descriptor) == null) {
                 pendingDeleteClusters.add(descriptor)
             }
         }
 
         taskmanagerPersistentVolumeClaims.forEach { (descriptor, _) ->
-            if (!pendingDeleteClusters.contains(descriptor) && flinkClusters.get(descriptor) == null) {
+            if (!pendingDeleteClusters.contains(descriptor) && clusters.get(descriptor) == null) {
                 pendingDeleteClusters.add(descriptor)
             }
         }
@@ -387,6 +203,136 @@ class RunOperator {
         pendingDeleteClusters.forEach {
             logger.info("Deleting orphan cluster ${it.name}...")
             ClusterDeleteHandler.execute(it)
+        }
+    }
+
+    private fun startWatching(config: OperatorConfig) {
+        val objectApi = CustomObjectsApi()
+
+        val coreApi = CoreV1Api()
+
+        val appsApi = AppsV1Api()
+
+        thread {
+            watchResources(config, sharedLock, queue, { descriptor, resource ->
+                clusters.put(descriptor, resource)
+            }, { descriptor, _ ->
+                clusters.remove(descriptor)
+            }, {
+                it.spec.clusterName
+            }, {
+                it.spec.environment
+            }) {
+                ClusterResourcesWatchFactory.createWatchFlickClusterResources(it.namespace, objectApi)
+            }
+        }
+
+        thread {
+            watchResources(config, sharedLock, queue, { descriptor, resource ->
+                services.put(descriptor, resource)
+            }, { descriptor, _ ->
+                services.remove(descriptor)
+            }, {
+                it.metadata.labels.get("cluster")
+            }, {
+                it.metadata.labels.get("environment")
+            }) {
+                ClusterResourcesWatchFactory.createWatchServiceResources(it.namespace, coreApi)
+            }
+        }
+
+        thread {
+            watchResources(config, sharedLock, queue, { descriptor, resource ->
+                deployments.put(descriptor, resource)
+            }, { descriptor, _ ->
+                deployments.remove(descriptor)
+            }, {
+                it.metadata.labels.get("cluster")
+            }, {
+                it.metadata.labels.get("environment")
+            }) {
+                ClusterResourcesWatchFactory.createWatchDeploymentResources(it.namespace, appsApi)
+            }
+        }
+
+        thread {
+            watchResources(config, sharedLock, queue, { descriptor, resource ->
+                if (resource.metadata.labels.get("role").equals("jobmanager")) jobmanagerStatefulSets.put(descriptor, resource) else taskmanagerStatefulSets.put(descriptor, resource)
+            }, { descriptor, resource ->
+                if (resource.metadata.labels.get("role").equals("jobmanager")) jobmanagerStatefulSets.remove(descriptor) else taskmanagerStatefulSets.remove(descriptor)
+            }, {
+                it.metadata.labels.get("cluster")
+            }, {
+                it.metadata.labels.get("environment")
+            }) {
+                ClusterResourcesWatchFactory.createWatchStatefulSetResources(it.namespace, appsApi)
+            }
+        }
+
+        thread {
+            watchResources(config, sharedLock, queue, { descriptor, resource ->
+                if (resource.metadata.labels.get("role").equals("jobmanager")) jobmanagerPersistentVolumeClaims.put(descriptor, resource) else taskmanagerPersistentVolumeClaims.put(descriptor, resource)
+            }, { descriptor, resource ->
+                if (resource.metadata.labels.get("role").equals("jobmanager")) jobmanagerPersistentVolumeClaims.remove(descriptor) else taskmanagerPersistentVolumeClaims.remove(descriptor)
+            }, {
+                it.metadata.labels.get("cluster")
+            }, {
+                it.metadata.labels.get("environment")
+            }) {
+                ClusterResourcesWatchFactory.createWatchPermanentVolumeClaimResources(it.namespace, coreApi)
+            }
+        }
+    }
+
+    private fun <T> watchResources(
+        config: OperatorConfig,
+        semaphore: Semaphore,
+        notificationQueue: LinkedBlockingQueue<Any>,
+        onUpdate: (ClusterDescriptor, T) -> Unit,
+        onDelete: (ClusterDescriptor, T) -> Unit,
+        extractClusterName: (T) -> String?,
+        extractEnvironment: (T) -> String?,
+        createWatch: (OperatorConfig) -> Watch<T>
+    ) {
+        while (true) {
+            try {
+                createWatch(config).forEach { resource ->
+                    try {
+                        semaphore.acquire()
+                        val clusterName = extractClusterName(resource.`object`)
+                        val environment = extractEnvironment(resource.`object`)
+                        if (clusterName != null && environment != null) {
+                            when (resource.type) {
+                                "ADDED", "MODIFIED" -> onUpdate(
+                                    ClusterDescriptor(
+                                        namespace = config.namespace,
+                                        name = clusterName,
+                                        environment = environment
+                                    ), resource.`object`
+                                )
+                                "DELETED" -> onDelete(
+                                    ClusterDescriptor(
+                                        namespace = config.namespace,
+                                        name = clusterName,
+                                        environment = environment
+                                    ), resource.`object`
+                                )
+                            }
+                            notificationQueue.add(resource.`object`)
+                        }
+                    } finally {
+                        semaphore.release()
+                    }
+                }
+            } catch (e: InterruptedException) {
+                break
+            } catch (e: RuntimeException) {
+                if (!(e.cause is SocketTimeoutException)) {
+                    e.printStackTrace()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 }
