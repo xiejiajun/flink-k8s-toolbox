@@ -12,8 +12,8 @@ import io.kubernetes.client.models.V1Service
 import io.kubernetes.client.models.V1StatefulSet
 import io.kubernetes.client.util.Watch
 
-object ClusterResourcesWatchFactory {
-    fun createWatchFlickClusterResources(namespace: String, objectApi: CustomObjectsApi): Watch<V1FlinkCluster> =
+object ResourceWatchFactory {
+    fun createWatchFlickClusterResources(objectApi: CustomObjectsApi, namespace: String): Watch<V1FlinkCluster> =
         Watch.createWatch<V1FlinkCluster>(
             Configuration.getDefaultApiClient(),
             objectApi.listNamespacedCustomObjectCall(
@@ -31,7 +31,7 @@ object ClusterResourcesWatchFactory {
             object : TypeToken<Watch.Response<V1FlinkCluster>>() {}.type
         )
 
-    fun createWatchServiceResources(namespace: String, coreApi: CoreV1Api): Watch<V1Service> =
+    fun createWatchServiceResources(coreApi: CoreV1Api, namespace: String): Watch<V1Service> =
         Watch.createWatch<V1Service>(
             Configuration.getDefaultApiClient(),
             coreApi.listNamespacedServiceCall(
@@ -51,7 +51,7 @@ object ClusterResourcesWatchFactory {
             object : TypeToken<Watch.Response<V1Service>>() {}.type
         )
 
-    fun createWatchDeploymentResources(namespace: String, appsApi: AppsV1Api): Watch<V1Deployment> =
+    fun createWatchDeploymentResources(appsApi: AppsV1Api, namespace: String): Watch<V1Deployment> =
         Watch.createWatch<V1Deployment>(
             Configuration.getDefaultApiClient(),
             appsApi.listNamespacedDeploymentCall(
@@ -71,7 +71,7 @@ object ClusterResourcesWatchFactory {
             object : TypeToken<Watch.Response<V1Deployment>>() {}.type
         )
 
-    fun createWatchStatefulSetResources(namespace: String, appsApi: AppsV1Api): Watch<V1StatefulSet> =
+    fun createWatchStatefulSetResources(appsApi: AppsV1Api, namespace: String): Watch<V1StatefulSet> =
         Watch.createWatch<V1StatefulSet>(
             Configuration.getDefaultApiClient(),
             appsApi.listNamespacedStatefulSetCall(
@@ -91,7 +91,7 @@ object ClusterResourcesWatchFactory {
             object : TypeToken<Watch.Response<V1StatefulSet>>() {}.type
         )
 
-    fun createWatchPermanentVolumeClaimResources(namespace: String, coreApi: CoreV1Api): Watch<V1PersistentVolumeClaim> =
+    fun createWatchPermanentVolumeClaimResources(coreApi: CoreV1Api, namespace: String): Watch<V1PersistentVolumeClaim> =
         Watch.createWatch<V1PersistentVolumeClaim>(
             Configuration.getDefaultApiClient(),
             coreApi.listNamespacedPersistentVolumeClaimCall(
