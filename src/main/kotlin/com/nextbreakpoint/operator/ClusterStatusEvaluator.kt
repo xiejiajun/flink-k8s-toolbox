@@ -1,6 +1,5 @@
 package com.nextbreakpoint.operator
 
-import com.nextbreakpoint.command.RunOperator
 import com.nextbreakpoint.operator.model.*
 
 class ClusterStatusEvaluator {
@@ -20,64 +19,29 @@ class ClusterStatusEvaluator {
 
         val taskmanagerPersistentVolumeClaimStatus = evaluateTaskManagerPersistentVolumeClaimStatus(resources, targetClusterConfig)
 
-//        val clusterConfig = ClusterConfig(
-//            descriptor = ClusterDescriptor(
-//                namespace = targetClusterConfig.descriptor.namespace,
-//                name = targetClusterConfig.descriptor.name,
-//                environment = environment
-//            ),
-//            jobmanager = JobManagerConfig(
-//                image = jobmanagerImage,
-//                pullSecrets = pullSecrets,
-//                pullPolicy = jobmanagerPullPolicy,
-//                serviceMode = serviceMode,
-//                serviceAccount = jobmanagerServiceAccount,
-//                environmentVariables = jobmanagerEnvironmentVariables,
-//                resources = ResourcesConfig(
-//                    cpus = jobmanagerCpu,
-//                    memory = jobmanagerMemory
-//                ),
-//                storage = StorageConfig(
-//                    storageClass = jobmanagerStorageClassName,
-//                    size = jobmanagerStorageSize
-//                )
-//            ),
-//            taskmanager = TaskManagerConfig(
-//                image = taskmanagerImage,
-//                pullSecrets = pullSecrets,
-//                pullPolicy = taskmanagerPullPolicy,
-//                serviceAccount = taskmanagerServiceAccount,
-//                environmentVariables = taskmanagerEnvironmentVariables,
-//                replicas = taskmanagerReplicas,
-//                taskSlots = taskmanagerTaskSlots,
-//                resources = ResourcesConfig(
-//                    cpus = taskmanagerCpu,
-//                    memory = taskmanagerMemory
-//                ),
-//                storage = StorageConfig(
-//                    storageClass = taskmanagerStorageClassName,
-//                    size = taskmanagerStorageSize
-//                )
-//            ),
-//            sidecar = SidecarConfig(
-//                image = sidecarImage,
-//                pullSecrets = pullSecrets,
-//                pullPolicy = sidecarPullPolicy,
-//                serviceAccount = sidecarServiceAccount,
-//                className = sidecarClassName,
-//                jarPath = sidecarJarPath,
-//                savepoint = sidecarSavepoint,
-//                arguments = sidecarArguments.joinToString(" "),
-//                parallelism = sidecarParallelism?.toInt() ?: 1
-//            )
-//        )
-//
-//        val diverged = clusterConfig.equals(targetClusterConfig).not()
-//
-//        if (diverged) {
-//            RunOperator.logger.info("Current config: $clusterConfig")
-//            RunOperator.logger.info("Desired config: $targetClusterConfig")
-//        }
+        if (jobmanagerServiceStatus != ResourceStatus.VALID) {
+            return true
+        }
+
+        if (sidecarDeploymentStatus != ResourceStatus.VALID) {
+            return true
+        }
+
+        if (jobmanagerStatefulSetStatus != ResourceStatus.VALID) {
+            return true
+        }
+
+        if (taskmanagerStatefulSetStatus != ResourceStatus.VALID) {
+            return true
+        }
+
+        if (jobmanagerPersistentVolumeClaimStatus != ResourceStatus.VALID) {
+            return true
+        }
+
+        if (taskmanagerPersistentVolumeClaimStatus != ResourceStatus.VALID) {
+            return true
+        }
 
         return false
     }
@@ -87,6 +51,8 @@ class ClusterStatusEvaluator {
         targetClusterConfig: ClusterConfig
     ): ResourceStatus {
         val sidecarDeployment = actualClusterResources.sidecarDeployment ?: return ResourceStatus.MISSING
+
+//        val diff = mutableListOf<String>()
 
         if (sidecarDeployment.metadata.labels["component"]?.equals("flink") != true) {
             return ResourceStatus.DIVERGENT
@@ -104,70 +70,91 @@ class ClusterStatusEvaluator {
             return ResourceStatus.DIVERGENT
         }
 
-        val sidecarImage = sidecarDeployment.spec.template.spec.containers.get(0).image
+        val container = sidecarDeployment.spec.template.spec.containers.get(0)
 
-        val sidecarPullPolicy = sidecarDeployment.spec.template.spec.containers.get(0).imagePullPolicy
-
-        val sidecarServiceAccount = sidecarDeployment.spec.template.spec.serviceAccount
-
-
-
-
-        val containerArguments = sidecarDeployment.spec.template.spec.containers.get(0).args
-
-        if (containerArguments.get(0) != "sidecar") {
-            RunOperator.logger.warn("Sidecar argument are: ${containerArguments.joinToString(" ")}}")
+        if (container.image != targetClusterConfig.sidecar.image) {
+            return ResourceStatus.DIVERGENT
         }
 
-        if (containerArguments.get(1) != "submit" && containerArguments.get(1) != "watch") {
-            RunOperator.logger.warn("Sidecar argument are: ${containerArguments.joinToString(" ")}}")
+        if (container.imagePullPolicy != targetClusterConfig.sidecar.pullPolicy) {
+            return ResourceStatus.DIVERGENT
         }
 
-        val sidecarNamespace =
-            containerArguments.filter { it.startsWith("--namespace") }.map { it.substringAfter("=") }.firstOrNull()
+        if (sidecarDeployment.spec.template.spec.serviceAccount != targetClusterConfig.sidecar.serviceAccount) {
+            return ResourceStatus.DIVERGENT
+        }
 
-        val sidecarEnvironment =
-            containerArguments.filter { it.startsWith("--environment") }.map { it.substringAfter("=") }.firstOrNull()
+        if (sidecarDeployment.spec.template.spec.imagePullSecrets[0]?.name != targetClusterConfig.sidecar.pullSecrets) {
+            return ResourceStatus.DIVERGENT
+        }
 
-        val sidecarClusterName =
-            containerArguments.filter { it.startsWith("--cluster-name") }.map { it.substringAfter("=") }.firstOrNull()
+        if (container.args[0] != "sidecar") {
+            return ResourceStatus.DIVERGENT
+        }
 
-        val sidecarJarPath =
-            containerArguments.filter { it.startsWith("--jar-path") }.map { it.substringAfter("=") }.firstOrNull()
+        if (container.args[1] != "submit" && container.args[1] != "watch") {
+            return ResourceStatus.DIVERGENT
+        }
 
-        val sidecarClassName =
-            containerArguments.filter { it.startsWith("--class-name") }.map { it.substringAfter("=") }.firstOrNull()
+        val sidecarNamespace = extractArgument(container.args, "--namespace")
 
-        val sidecarSavepoint =
-            containerArguments.filter { it.startsWith("--savepoint") }.map { it.substringAfter("=") }.firstOrNull()
+        val sidecarEnvironment = extractArgument(container.args, "--environment")
 
-        val sidecarParallelism =
-            containerArguments.filter { it.startsWith("--parallelism") }.map { it.substringAfter("=") }.firstOrNull()
+        val sidecarClusterName = extractArgument(container.args, "--cluster-name")
+
+        val sidecarJarPath = extractArgument(container.args, "--jar-path")
+
+        val sidecarClassName = extractArgument(container.args, "--class-name")
+
+        val sidecarSavepoint = extractArgument(container.args, "--savepoint")
+
+        val sidecarParallelism = extractArgument(container.args, "--parallelism")
 
         if (sidecarNamespace == null || sidecarNamespace != targetClusterConfig.descriptor.namespace) {
-            RunOperator.logger.warn("Sidecar argument are: ${containerArguments.joinToString(" ")}}")
+            return ResourceStatus.DIVERGENT
         }
 
         if (sidecarEnvironment == null || sidecarEnvironment != targetClusterConfig.descriptor.environment) {
-            RunOperator.logger.warn("Sidecar argument are: ${containerArguments.joinToString(" ")}}")
+            return ResourceStatus.DIVERGENT
         }
 
         if (sidecarClusterName == null || sidecarClusterName != targetClusterConfig.descriptor.name) {
-            RunOperator.logger.warn("Sidecar argument are: ${containerArguments.joinToString(" ")}}")
+            return ResourceStatus.DIVERGENT
         }
 
-        if (containerArguments.get(1) == "submit" && sidecarJarPath == null) {
-            RunOperator.logger.warn("Sidecar argument are: ${containerArguments.joinToString(" ")}}")
+        if (container.args.get(1) == "submit" && sidecarJarPath == null) {
+            return ResourceStatus.DIVERGENT
         }
 
-        val sidecarArguments =
-            containerArguments.filter { it.startsWith("--argument") }.map { it.substringAfter("=") }.toList()
+        val sidecarArguments = container.args.filter { it.startsWith("--argument") }.map { it.substringAfter("=") }.toList()
 
-        val pullSecrets =
-            if (sidecarDeployment.spec.template.spec.imagePullSecrets?.isNotEmpty() == true) sidecarDeployment.spec.template.spec.imagePullSecrets.get(0).name else null
+        if (sidecarClassName != targetClusterConfig.sidecar.className) {
+            return ResourceStatus.DIVERGENT
+        }
+
+        if (sidecarSavepoint != targetClusterConfig.sidecar.savepoint) {
+            return ResourceStatus.DIVERGENT
+        }
+
+        if (sidecarParallelism == null || sidecarParallelism.toInt() != targetClusterConfig.sidecar.parallelism) {
+            return ResourceStatus.DIVERGENT
+        }
+
+        if (sidecarJarPath != targetClusterConfig.sidecar.jarPath) {
+            return ResourceStatus.DIVERGENT
+        }
+
+        val arguments = if (sidecarArguments.isNotEmpty()) sidecarArguments.joinToString(" ") else null
+
+        if (arguments != targetClusterConfig.sidecar.arguments) {
+            return ResourceStatus.DIVERGENT
+        }
 
         return ResourceStatus.VALID
     }
+
+    private fun extractArgument(containerArguments: List<String>, name: String) =
+        containerArguments.filter { it.startsWith(name) }.map { it.substringAfter("=") }.firstOrNull()
 
     private fun evaluateJobManagerServiceStatus(
         actualClusterResources: ClusterResources,
@@ -242,7 +229,7 @@ class ClusterStatusEvaluator {
             return ResourceStatus.DIVERGENT
         }
 
-        if (jobmanagerStatefulSet.spec.template.spec.imagePullSecrets.get(0)?.name != targetClusterConfig.jobmanager.pullSecrets) {
+        if (jobmanagerStatefulSet.spec.template.spec.imagePullSecrets[0]?.name != targetClusterConfig.jobmanager.pullSecrets) {
             return ResourceStatus.DIVERGENT
         }
 
@@ -283,7 +270,7 @@ class ClusterStatusEvaluator {
             .map { EnvironmentVariable(it.name, it.value) }
             .toList()
 
-        if (!jobmanagerEnvironmentVariables.equals(targetClusterConfig.jobmanager.environmentVariables)) {
+        if (jobmanagerEnvironmentVariables != targetClusterConfig.jobmanager.environmentVariables) {
             return ResourceStatus.DIVERGENT
         }
 
@@ -334,7 +321,11 @@ class ClusterStatusEvaluator {
             return ResourceStatus.DIVERGENT
         }
 
-        if (taskmanagerStatefulSet.spec.template.spec.imagePullSecrets.get(0)?.name != targetClusterConfig.taskmanager.pullSecrets) {
+        if (taskmanagerStatefulSet.spec.template.spec.imagePullSecrets[0]?.name != targetClusterConfig.taskmanager.pullSecrets) {
+            return ResourceStatus.DIVERGENT
+        }
+
+        if (taskmanagerStatefulSet.spec.replicas != targetClusterConfig.taskmanager.replicas) {
             return ResourceStatus.DIVERGENT
         }
 
@@ -349,10 +340,6 @@ class ClusterStatusEvaluator {
         }
 
         if (persistentVolumeClaim.spec.resources.requests.get("storage")?.number?.toInt()?.equals(targetClusterConfig.taskmanager.storage.size) != true) {
-            return ResourceStatus.DIVERGENT
-        }
-
-        if (taskmanagerStatefulSet.spec.replicas != targetClusterConfig.taskmanager.replicas) {
             return ResourceStatus.DIVERGENT
         }
 
@@ -415,7 +402,7 @@ class ClusterStatusEvaluator {
             return ResourceStatus.DIVERGENT
         }
 
-        if (!jobmanagerPersistentVolumeClaim.spec.storageClassName.equals(targetClusterConfig.jobmanager.storage.storageClass)) {
+        if (jobmanagerPersistentVolumeClaim.spec.storageClassName != targetClusterConfig.jobmanager.storage.storageClass) {
             return ResourceStatus.DIVERGENT
         }
 
@@ -444,7 +431,7 @@ class ClusterStatusEvaluator {
             return ResourceStatus.DIVERGENT
         }
 
-        if (!taskmanagerPersistentVolumeClaim.spec.storageClassName.equals(targetClusterConfig.taskmanager.storage.storageClass)) {
+        if (taskmanagerPersistentVolumeClaim.spec.storageClassName != targetClusterConfig.taskmanager.storage.storageClass) {
             return ResourceStatus.DIVERGENT
         }
 
