@@ -45,11 +45,11 @@ class ClusterStatusEvaluator {
             statusReport.add("cluster label missing or invalid")
         }
 
-        if (sidecarDeployment.metadata.labels["environment"]?.equals(targetClusterConfig.descriptor.name) != true) {
+        if (sidecarDeployment.metadata.labels["environment"]?.equals(targetClusterConfig.descriptor.environment) != true) {
             statusReport.add("environment label missing or invalid")
         }
 
-        if (sidecarDeployment.spec.template.spec.serviceAccount != targetClusterConfig.sidecar.serviceAccount) {
+        if (sidecarDeployment.spec.template.spec.serviceAccountName != targetClusterConfig.sidecar.serviceAccount) {
             statusReport.add("service account does not match")
         }
 
@@ -167,7 +167,7 @@ class ClusterStatusEvaluator {
             statusReport.add("cluster label missing or invalid")
         }
 
-        if (jobmanagerService.metadata.labels["environment"]?.equals(targetClusterConfig.descriptor.name) != true) {
+        if (jobmanagerService.metadata.labels["environment"]?.equals(targetClusterConfig.descriptor.environment) != true) {
             statusReport.add("environment label missing or invalid")
         }
 
@@ -202,11 +202,11 @@ class ClusterStatusEvaluator {
             statusReport.add("cluster label missing or invalid")
         }
 
-        if (jobmanagerStatefulSet.metadata.labels["environment"]?.equals(targetClusterConfig.descriptor.name) != true) {
+        if (jobmanagerStatefulSet.metadata.labels["environment"]?.equals(targetClusterConfig.descriptor.environment) != true) {
             statusReport.add("environment label missing or invalid")
         }
 
-        if (jobmanagerStatefulSet.spec.template.spec.serviceAccount != targetClusterConfig.jobmanager.serviceAccount) {
+        if (jobmanagerStatefulSet.spec.template.spec.serviceAccountName != targetClusterConfig.jobmanager.serviceAccount) {
             statusReport.add("service account does not match")
         }
 
@@ -247,37 +247,37 @@ class ClusterStatusEvaluator {
                 statusReport.add("container cpu limit doesn't match")
             }
 
-            if (container.resources.requests.get("memory")?.number?.toFloat()?.equals(targetClusterConfig.jobmanager.resources.memory) != true) {
+            if (container.resources.requests.get("memory")?.number?.toInt()?.equals(targetClusterConfig.jobmanager.resources.memory * 1024 * 1024) != true) {
                 statusReport.add("container memory limit doesn't match")
             }
 
             val jobmanagerRpcAddressEnvVar = container.env.filter { it.name == "JOB_MANAGER_RPC_ADDRESS" }.firstOrNull()
 
-            if (jobmanagerRpcAddressEnvVar == null || (actualClusterResources.jobmanagerService != null && jobmanagerRpcAddressEnvVar.value.toString() != "${actualClusterResources.jobmanagerService.metadata.name}:8081")) {
+            if (jobmanagerRpcAddressEnvVar?.value == null || (actualClusterResources.jobmanagerService != null && jobmanagerRpcAddressEnvVar.value.toString() != "${actualClusterResources.jobmanagerService.metadata.name}:8081")) {
                 statusReport.add("missing or invalid environment variable JOB_MANAGER_RPC_ADDRESS")
             }
 
             val jobmanagerEnvironmentEnvVar = container.env.filter { it.name == "FLINK_ENVIRONMENT" }.firstOrNull()
 
-            if (jobmanagerEnvironmentEnvVar == null || jobmanagerEnvironmentEnvVar.value.toString() != targetClusterConfig.descriptor.environment) {
+            if (jobmanagerEnvironmentEnvVar?.value == null || jobmanagerEnvironmentEnvVar.value.toString() != targetClusterConfig.descriptor.environment) {
                 statusReport.add("missing or invalid environment variable FLINK_ENVIRONMENT")
             }
 
-            val jobmanagerMemoryEnvVar = container.env.filter { it.name == "FLINK_TM_HEAP" }.firstOrNull()
+            val jobmanagerMemoryEnvVar = container.env.filter { it.name == "FLINK_JM_HEAP" }.firstOrNull()
 
-            if (jobmanagerMemoryEnvVar == null || jobmanagerMemoryEnvVar.value.toInt() < targetClusterConfig.jobmanager.resources.memory) {
-                statusReport.add("missing or invalid environment variable FLINK_TM_HEAP")
+            if (jobmanagerMemoryEnvVar?.value == null || jobmanagerMemoryEnvVar.value.toInt() < targetClusterConfig.jobmanager.resources.memory) {
+                statusReport.add("missing or invalid environment variable FLINK_JM_HEAP")
             }
 
             val jobmanagerPodNamespaceEnvVar = container.env.filter { it.name == "POD_NAMESPACE" }.firstOrNull()
 
-            if (jobmanagerPodNamespaceEnvVar == null || jobmanagerPodNamespaceEnvVar.value.toString() != actualClusterResources.jobmanagerStatefulSet.metadata.namespace) {
+            if (jobmanagerPodNamespaceEnvVar?.valueFrom == null || jobmanagerPodNamespaceEnvVar.valueFrom.fieldRef.fieldPath != "metadata.namespace") {
                 statusReport.add("missing or invalid environment variable POD_NAMESPACE")
             }
 
             val jobmanagerPodNameEnvVar = container.env.filter { it.name == "POD_NAME" }.firstOrNull()
 
-            if (jobmanagerPodNameEnvVar == null || jobmanagerPodNameEnvVar.value.toString() != actualClusterResources.jobmanagerStatefulSet.metadata.name) {
+            if (jobmanagerPodNameEnvVar?.valueFrom == null || jobmanagerPodNameEnvVar.valueFrom.fieldRef.fieldPath != "metadata.name") {
                 statusReport.add("missing or invalid environment variable POD_NAME")
             }
 
@@ -322,11 +322,11 @@ class ClusterStatusEvaluator {
             statusReport.add("cluster label missing or invalid")
         }
 
-        if (taskmanagerStatefulSet.metadata.labels["environment"]?.equals(targetClusterConfig.descriptor.name) != true) {
+        if (taskmanagerStatefulSet.metadata.labels["environment"]?.equals(targetClusterConfig.descriptor.environment) != true) {
             statusReport.add("environment label missing or invalid")
         }
 
-        if (taskmanagerStatefulSet.spec.template.spec.serviceAccount != targetClusterConfig.taskmanager.serviceAccount) {
+        if (taskmanagerStatefulSet.spec.template.spec.serviceAccountName != targetClusterConfig.taskmanager.serviceAccount) {
             statusReport.add("service account does not match")
         }
 
@@ -371,43 +371,43 @@ class ClusterStatusEvaluator {
                 statusReport.add("container cpu limit doesn't match")
             }
 
-            if (container.resources.requests.get("memory")?.number?.toFloat()?.equals(targetClusterConfig.taskmanager.resources.memory) != true) {
+            if (container.resources.requests.get("memory")?.number?.toInt()?.equals(targetClusterConfig.taskmanager.resources.memory * 1024 * 1024) != true) {
                 statusReport.add("container memory limit doesn't match")
             }
 
             val taskmanagerRpcAddressEnvVar = container.env.filter { it.name == "JOB_MANAGER_RPC_ADDRESS" }.firstOrNull()
 
-            if (taskmanagerRpcAddressEnvVar == null || (actualClusterResources.jobmanagerService != null && taskmanagerRpcAddressEnvVar.value.toString() != "${actualClusterResources.jobmanagerService.metadata.name}:8081")) {
+            if (taskmanagerRpcAddressEnvVar?.value == null || (actualClusterResources.jobmanagerService != null && taskmanagerRpcAddressEnvVar.value.toString() != "${actualClusterResources.jobmanagerService.metadata.name}:8081")) {
                 statusReport.add("missing or invalid environment variable JOB_MANAGER_RPC_ADDRESS")
             }
 
             val taskmanagerEnvironmentEnvVar = container.env.filter { it.name == "FLINK_ENVIRONMENT" }.firstOrNull()
 
-            if (taskmanagerEnvironmentEnvVar == null || taskmanagerEnvironmentEnvVar.value.toString() != targetClusterConfig.descriptor.environment) {
+            if (taskmanagerEnvironmentEnvVar?.value == null || taskmanagerEnvironmentEnvVar.value.toString() != targetClusterConfig.descriptor.environment) {
                 statusReport.add("missing or invalid environment variable FLINK_ENVIRONMENT")
             }
 
             val taskmanagerMemoryEnvVar = container.env.filter { it.name == "FLINK_TM_HEAP" }.firstOrNull()
 
-            if (taskmanagerMemoryEnvVar == null || taskmanagerMemoryEnvVar.value.toInt() < targetClusterConfig.taskmanager.resources.memory) {
+            if (taskmanagerMemoryEnvVar?.value == null || taskmanagerMemoryEnvVar.value.toInt() < targetClusterConfig.taskmanager.resources.memory) {
                 statusReport.add("missing or invalid environment variable FLINK_TM_HEAP")
             }
 
             val taskmanagerTaskSlotsEnvVar = container.env.filter { it.name == "TASK_MANAGER_NUMBER_OF_TASK_SLOTS" }.firstOrNull()
 
-            if (taskmanagerTaskSlotsEnvVar == null || taskmanagerTaskSlotsEnvVar.value.toInt() != targetClusterConfig.taskmanager.taskSlots) {
+            if (taskmanagerTaskSlotsEnvVar?.value == null || taskmanagerTaskSlotsEnvVar.value.toInt() != targetClusterConfig.taskmanager.taskSlots) {
                 statusReport.add("missing or invalid environment variable TASK_MANAGER_NUMBER_OF_TASK_SLOTS")
             }
 
             val taskmanagerPodNamespaceEnvVar = container.env.filter { it.name == "POD_NAMESPACE" }.firstOrNull()
 
-            if (taskmanagerPodNamespaceEnvVar == null || taskmanagerPodNamespaceEnvVar.value.toString() != actualClusterResources.taskmanagerStatefulSet.metadata.namespace) {
+            if (taskmanagerPodNamespaceEnvVar?.valueFrom == null || taskmanagerPodNamespaceEnvVar.valueFrom.fieldRef.fieldPath != "metadata.namespace") {
                 statusReport.add("missing or invalid environment variable POD_NAMESPACE")
             }
 
             val taskmanagerPodNameEnvVar = container.env.filter { it.name == "POD_NAME" }.firstOrNull()
 
-            if (taskmanagerPodNameEnvVar == null || taskmanagerPodNameEnvVar.value.toString() != actualClusterResources.taskmanagerStatefulSet.metadata.name) {
+            if (taskmanagerPodNameEnvVar?.valueFrom == null || taskmanagerPodNameEnvVar.valueFrom.fieldRef.fieldPath != "metadata.name") {
                 statusReport.add("missing or invalid environment variable POD_NAME")
             }
 
@@ -453,7 +453,7 @@ class ClusterStatusEvaluator {
             statusReport.add("cluster label missing or invalid")
         }
 
-        if (jobmanagerPersistentVolumeClaim.metadata.labels["environment"]?.equals(targetClusterConfig.descriptor.name) != true) {
+        if (jobmanagerPersistentVolumeClaim.metadata.labels["environment"]?.equals(targetClusterConfig.descriptor.environment) != true) {
             statusReport.add("environment label missing or invalid")
         }
 
@@ -488,7 +488,7 @@ class ClusterStatusEvaluator {
             statusReport.add("cluster label missing or invalid")
         }
 
-        if (taskmanagerPersistentVolumeClaim.metadata.labels["environment"]?.equals(targetClusterConfig.descriptor.name) != true) {
+        if (taskmanagerPersistentVolumeClaim.metadata.labels["environment"]?.equals(targetClusterConfig.descriptor.environment) != true) {
             statusReport.add("environment label missing or invalid")
         }
 

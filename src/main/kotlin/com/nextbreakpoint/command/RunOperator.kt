@@ -186,17 +186,17 @@ class RunOperator {
     }
 
     private fun printStatus(clusterStatus: ClusterStatus) {
-        clusterStatus.jobmanagerService.second.forEach { println(it) }
+        clusterStatus.jobmanagerService.second.forEach { println("jobmanager service: ${it}") }
 
-        clusterStatus.sidecarDeployment.second.forEach { println(it) }
+        clusterStatus.sidecarDeployment.second.forEach { println("sidecar deployment: ${it}") }
 
-        clusterStatus.jobmanagerStatefulSet.second.forEach { println(it) }
+        clusterStatus.jobmanagerStatefulSet.second.forEach { println("jobmanager stateful set: ${it}") }
 
-        clusterStatus.taskmanagerStatefulSet.second.forEach { println(it) }
+        clusterStatus.taskmanagerStatefulSet.second.forEach { println("taskmanager stateful set: ${it}") }
 
-        clusterStatus.jobmanagerPersistentVolumeClaim.second.forEach { println(it) }
+        clusterStatus.jobmanagerPersistentVolumeClaim.second.forEach { println("jobmanager persistent volume claim: ${it}") }
 
-        clusterStatus.taskmanagerPersistentVolumeClaim.second.forEach { println(it) }
+        clusterStatus.taskmanagerPersistentVolumeClaim.second.forEach { println("taskmanager persistent volume claim: ${it}") }
     }
 
     private fun convertToClusterConfigs(clusterResources: Map<ClusterDescriptor, V1FlinkCluster>) =
