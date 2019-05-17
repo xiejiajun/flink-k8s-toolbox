@@ -20,11 +20,9 @@ class ClusterStatusEvaluatorTest {
 
     @Test
     fun `should return valid for all resources when passing base configuration`() {
-        val targetClusterConfig = baseClusterConfig()
+        val expectedResources = createClusterResources(baseClusterConfig)
 
-        val targetResources = createClusterResources(targetClusterConfig)
-
-        val actualStatus = evaluator.status(targetClusterConfig, targetResources)
+        val actualStatus = evaluator.status(baseClusterConfig, expectedResources)
 
         printStatus(actualStatus)
 
@@ -142,7 +140,7 @@ class ClusterStatusEvaluatorTest {
 
         persistentVolumeClaim.spec = V1PersistentVolumeClaimSpec()
 
-        persistentVolumeClaim.spec.setStorageClassName(storageConfig.storageClass)
+        persistentVolumeClaim.spec.storageClassName = storageConfig.storageClass
 
         return persistentVolumeClaim
     }
