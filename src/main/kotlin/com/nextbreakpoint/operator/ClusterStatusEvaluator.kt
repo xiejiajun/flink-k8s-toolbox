@@ -3,10 +3,10 @@ package com.nextbreakpoint.operator
 import com.nextbreakpoint.operator.model.*
 
 class ClusterStatusEvaluator {
-    fun hasDiverged(
+    fun status(
         targetClusterConfig: ClusterConfig,
         resources: ClusterResources
-    ) : Boolean {
+    ): ClusterStatus {
         val jobmanagerServiceStatus = evaluateJobManagerServiceStatus(resources, targetClusterConfig)
 
         val sidecarDeploymentStatus = evaluateSidecarDeploymentStatus(resources, targetClusterConfig)
@@ -19,38 +19,21 @@ class ClusterStatusEvaluator {
 
         val taskmanagerPersistentVolumeClaimStatus = evaluateTaskManagerPersistentVolumeClaimStatus(resources, targetClusterConfig)
 
-        if (jobmanagerServiceStatus != ResourceStatus.VALID) {
-            return true
-        }
-
-        if (sidecarDeploymentStatus != ResourceStatus.VALID) {
-            return true
-        }
-
-        if (jobmanagerStatefulSetStatus != ResourceStatus.VALID) {
-            return true
-        }
-
-        if (taskmanagerStatefulSetStatus != ResourceStatus.VALID) {
-            return true
-        }
-
-        if (jobmanagerPersistentVolumeClaimStatus != ResourceStatus.VALID) {
-            return true
-        }
-
-        if (taskmanagerPersistentVolumeClaimStatus != ResourceStatus.VALID) {
-            return true
-        }
-
-        return false
+        return ClusterStatus(
+            jobmanagerService = jobmanagerServiceStatus,
+            sidecarDeployment = sidecarDeploymentStatus,
+            jobmanagerStatefulSet = jobmanagerStatefulSetStatus,
+            taskmanagerStatefulSet = taskmanagerStatefulSetStatus,
+            jobmanagerPersistentVolumeClaim = jobmanagerPersistentVolumeClaimStatus,
+            taskmanagerPersistentVolumeClaim = taskmanagerPersistentVolumeClaimStatus
+        )
     }
 
     private fun evaluateSidecarDeploymentStatus(
         actualClusterResources: ClusterResources,
         targetClusterConfig: ClusterConfig
-    ): ResourceStatus {
-        val sidecarDeployment = actualClusterResources.sidecarDeployment ?: return ResourceStatus.MISSING
+    ): Pair<ResourceStatus, List<String>> {
+        val sidecarDeployment = actualClusterResources.sidecarDeployment ?: return ResourceStatus.MISSING to listOf()
 
         val statusReport = mutableListOf<String>()
 
@@ -155,10 +138,10 @@ class ClusterStatusEvaluator {
         }
 
         if (statusReport.size > 0) {
-            return ResourceStatus.DIVERGENT
+            return ResourceStatus.DIVERGENT to statusReport
         }
 
-        return ResourceStatus.VALID
+        return ResourceStatus.VALID to listOf()
     }
 
     private fun extractArgument(containerArguments: List<String>, name: String) =
@@ -167,8 +150,8 @@ class ClusterStatusEvaluator {
     private fun evaluateJobManagerServiceStatus(
         actualClusterResources: ClusterResources,
         targetClusterConfig: ClusterConfig
-    ): ResourceStatus {
-        val jobmanagerService = actualClusterResources.jobmanagerService ?: return ResourceStatus.MISSING
+    ): Pair<ResourceStatus, List<String>> {
+        val jobmanagerService = actualClusterResources.jobmanagerService ?: return ResourceStatus.MISSING to listOf()
 
         val statusReport = mutableListOf<String>()
 
@@ -193,17 +176,17 @@ class ClusterStatusEvaluator {
         }
 
         if (statusReport.size > 0) {
-            return ResourceStatus.DIVERGENT
+            return ResourceStatus.DIVERGENT to statusReport
         }
 
-        return ResourceStatus.VALID
+        return ResourceStatus.VALID to listOf()
     }
 
     private fun evaluateJobManagerStatefulSetStatus(
         actualClusterResources: ClusterResources,
         targetClusterConfig: ClusterConfig
-    ): ResourceStatus {
-        val jobmanagerStatefulSet = actualClusterResources.jobmanagerStatefulSet ?: return ResourceStatus.MISSING
+    ): Pair<ResourceStatus, List<String>> {
+        val jobmanagerStatefulSet = actualClusterResources.jobmanagerStatefulSet ?: return ResourceStatus.MISSING to listOf()
 
         val statusReport = mutableListOf<String>()
 
@@ -264,6 +247,10 @@ class ClusterStatusEvaluator {
                 statusReport.add("container cpu limit doesn't match")
             }
 
+            if (container.resources.requests.get("memory")?.number?.toFloat()?.equals(targetClusterConfig.jobmanager.resources.memory) != true) {
+                statusReport.add("container memory limit doesn't match")
+            }
+
             val jobmanagerRpcAddressEnvVar = container.env.filter { it.name == "JOB_MANAGER_RPC_ADDRESS" }.firstOrNull()
 
             if (jobmanagerRpcAddressEnvVar == null || (actualClusterResources.jobmanagerService != null && jobmanagerRpcAddressEnvVar.value.toString() != "${actualClusterResources.jobmanagerService.metadata.name}:8081")) {
@@ -309,17 +296,17 @@ class ClusterStatusEvaluator {
         }
 
         if (statusReport.size > 0) {
-            return ResourceStatus.DIVERGENT
+            return ResourceStatus.DIVERGENT to statusReport
         }
 
-        return ResourceStatus.VALID
+        return ResourceStatus.VALID to listOf()
     }
 
     private fun evaluateTaskManagerStatefulSetStatus(
         actualClusterResources: ClusterResources,
         targetClusterConfig: ClusterConfig
-    ): ResourceStatus {
-        val taskmanagerStatefulSet = actualClusterResources.taskmanagerStatefulSet ?: return ResourceStatus.MISSING
+    ): Pair<ResourceStatus, List<String>> {
+        val taskmanagerStatefulSet = actualClusterResources.taskmanagerStatefulSet ?: return ResourceStatus.MISSING to listOf()
 
         val statusReport = mutableListOf<String>()
 
@@ -384,6 +371,10 @@ class ClusterStatusEvaluator {
                 statusReport.add("container cpu limit doesn't match")
             }
 
+            if (container.resources.requests.get("memory")?.number?.toFloat()?.equals(targetClusterConfig.taskmanager.resources.memory) != true) {
+                statusReport.add("container memory limit doesn't match")
+            }
+
             val taskmanagerRpcAddressEnvVar = container.env.filter { it.name == "JOB_MANAGER_RPC_ADDRESS" }.firstOrNull()
 
             if (taskmanagerRpcAddressEnvVar == null || (actualClusterResources.jobmanagerService != null && taskmanagerRpcAddressEnvVar.value.toString() != "${actualClusterResources.jobmanagerService.metadata.name}:8081")) {
@@ -436,17 +427,17 @@ class ClusterStatusEvaluator {
         }
 
         if (statusReport.size > 0) {
-            return ResourceStatus.DIVERGENT
+            return ResourceStatus.DIVERGENT to statusReport
         }
 
-        return ResourceStatus.VALID
+        return ResourceStatus.VALID to listOf()
     }
 
     private fun evaluateJobManagerPersistentVolumeClaimStatus(
         actualClusterResources: ClusterResources,
         targetClusterConfig: ClusterConfig
-    ): ResourceStatus {
-        val jobmanagerPersistentVolumeClaim = actualClusterResources.jobmanagerPersistentVolumeClaim ?: return ResourceStatus.MISSING
+    ): Pair<ResourceStatus, List<String>> {
+        val jobmanagerPersistentVolumeClaim = actualClusterResources.jobmanagerPersistentVolumeClaim ?: return ResourceStatus.MISSING to listOf()
 
         val statusReport = mutableListOf<String>()
 
@@ -471,17 +462,17 @@ class ClusterStatusEvaluator {
         }
 
         if (statusReport.size > 0) {
-            return ResourceStatus.DIVERGENT
+            return ResourceStatus.DIVERGENT to statusReport
         }
 
-        return ResourceStatus.VALID
+        return ResourceStatus.VALID to listOf()
     }
 
     private fun evaluateTaskManagerPersistentVolumeClaimStatus(
         actualClusterResources: ClusterResources,
         targetClusterConfig: ClusterConfig
-    ): ResourceStatus {
-        val taskmanagerPersistentVolumeClaim = actualClusterResources.taskmanagerPersistentVolumeClaim ?: return ResourceStatus.MISSING
+    ): Pair<ResourceStatus, List<String>> {
+        val taskmanagerPersistentVolumeClaim = actualClusterResources.taskmanagerPersistentVolumeClaim ?: return ResourceStatus.MISSING to listOf()
 
         val statusReport = mutableListOf<String>()
 
@@ -506,9 +497,9 @@ class ClusterStatusEvaluator {
         }
 
         if (statusReport.size > 0) {
-            return ResourceStatus.DIVERGENT
+            return ResourceStatus.DIVERGENT to statusReport
         }
 
-        return ResourceStatus.VALID
+        return ResourceStatus.VALID to listOf()
     }
 }

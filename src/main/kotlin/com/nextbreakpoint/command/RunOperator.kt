@@ -7,6 +7,8 @@ import com.nextbreakpoint.operator.*
 import com.nextbreakpoint.operator.model.ClusterConfig
 import com.nextbreakpoint.operator.ClusterConfigBuilder
 import com.nextbreakpoint.operator.model.ClusterResources
+import com.nextbreakpoint.operator.model.ClusterStatus
+import com.nextbreakpoint.operator.model.ResourceStatus
 import io.kubernetes.client.apis.AppsV1Api
 import io.kubernetes.client.apis.CoreV1Api
 import io.kubernetes.client.apis.CustomObjectsApi
@@ -105,7 +107,11 @@ class RunOperator {
                 taskmanagerPersistentVolumeClaim = taskmanagerPersistentVolumeClaim
             )
 
-            if (resourcesDiffEvaluator.hasDiverged(clusterConfig, actualResources)) {
+            val clusterStatus = resourcesDiffEvaluator.status(clusterConfig, actualResources)
+
+            if (hasDiverged(clusterStatus)) {
+                printStatus(clusterStatus)
+
                 val lastUpdated = status[clusterConfig.descriptor]
 
                 if (lastUpdated == null) {
@@ -149,6 +155,48 @@ class RunOperator {
             jobmanagerPersistentVolumeClaims,
             taskmanagerPersistentVolumeClaims
         )
+    }
+
+    private fun hasDiverged(clusterStatus: ClusterStatus): Boolean {
+        if (clusterStatus.jobmanagerService.first != ResourceStatus.VALID) {
+            return true
+        }
+
+        if (clusterStatus.sidecarDeployment.first != ResourceStatus.VALID) {
+            return true
+        }
+
+        if (clusterStatus.jobmanagerStatefulSet.first != ResourceStatus.VALID) {
+            return true
+        }
+
+        if (clusterStatus.taskmanagerStatefulSet.first != ResourceStatus.VALID) {
+            return true
+        }
+
+        if (clusterStatus.jobmanagerPersistentVolumeClaim.first != ResourceStatus.VALID) {
+            return true
+        }
+
+        if (clusterStatus.taskmanagerPersistentVolumeClaim.first != ResourceStatus.VALID) {
+            return true
+        }
+
+        return false
+    }
+
+    private fun printStatus(clusterStatus: ClusterStatus) {
+        clusterStatus.jobmanagerService.second.forEach { println(it) }
+
+        clusterStatus.sidecarDeployment.second.forEach { println(it) }
+
+        clusterStatus.jobmanagerStatefulSet.second.forEach { println(it) }
+
+        clusterStatus.taskmanagerStatefulSet.second.forEach { println(it) }
+
+        clusterStatus.jobmanagerPersistentVolumeClaim.second.forEach { println(it) }
+
+        clusterStatus.taskmanagerPersistentVolumeClaim.second.forEach { println(it) }
     }
 
     private fun convertToClusterConfigs(clusterResources: Map<ClusterDescriptor, V1FlinkCluster>) =
