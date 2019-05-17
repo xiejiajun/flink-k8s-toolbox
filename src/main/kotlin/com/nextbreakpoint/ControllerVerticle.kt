@@ -111,7 +111,7 @@ class ControllerVerticle : AbstractVerticle() {
 
         mainRouter.post("/cluster/delete").handler { context ->
             execute(context) { future ->
-                future.complete(ClusterDeleteHandler.execute(fromJson(context, ClusterDescriptor::class.java)))
+                future.complete(ClusterDeleteHandler.execute("flink-operator", fromJson(context, ClusterDescriptor::class.java)))
             }
         }
 

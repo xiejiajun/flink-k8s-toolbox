@@ -9,7 +9,7 @@ import org.apache.log4j.Logger
 object ClusterDeleteHandler {
     private val logger = Logger.getLogger(ClusterDeleteHandler::class.simpleName)
 
-    fun execute(descriptor: ClusterDescriptor): String {
+    fun execute(owner: String, descriptor: ClusterDescriptor): String {
         try {
             val api = AppsV1Api()
 
@@ -17,13 +17,13 @@ object ClusterDeleteHandler {
 
             logger.info("Deleting cluster ${descriptor.name}...")
 
-            deleteDeployment(api, descriptor)
+            deleteDeployment(api, owner, descriptor)
 
-            deleteStatefulSets(api, descriptor)
+            deleteStatefulSets(api, owner, descriptor)
 
-            deleteService(coreApi, descriptor)
+            deleteService(coreApi, owner, descriptor)
 
-            deletePersistentVolumeClaims(coreApi, descriptor)
+            deletePersistentVolumeClaims(coreApi, owner, descriptor)
 
             logger.info("Done.")
 
@@ -33,14 +33,14 @@ object ClusterDeleteHandler {
         }
     }
 
-    private fun deleteDeployment(api: AppsV1Api, descriptor: ClusterDescriptor) {
+    private fun deleteDeployment(api: AppsV1Api, owner: String, descriptor: ClusterDescriptor) {
         val deployments = api.listNamespacedDeployment(
             descriptor.namespace,
             null,
             null,
             null,
             null,
-            "cluster=${descriptor.name},environment=${descriptor.environment}",
+            "cluster=${descriptor.name},environment=${descriptor.environment},owner=${owner}",
             null,
             null,
             30,
@@ -71,14 +71,14 @@ object ClusterDeleteHandler {
         }
     }
 
-    private fun deleteStatefulSets(api: AppsV1Api, descriptor: ClusterDescriptor) {
+    private fun deleteStatefulSets(api: AppsV1Api, owner: String, descriptor: ClusterDescriptor) {
         val statefulSets = api.listNamespacedStatefulSet(
             descriptor.namespace,
             null,
             null,
             null,
             null,
-            "cluster=${descriptor.name},environment=${descriptor.environment}",
+            "cluster=${descriptor.name},environment=${descriptor.environment},owner=${owner}",
             null,
             null,
             30,
@@ -109,14 +109,14 @@ object ClusterDeleteHandler {
         }
     }
 
-    private fun deleteService(coreApi: CoreV1Api, descriptor: ClusterDescriptor) {
+    private fun deleteService(coreApi: CoreV1Api, owner: String, descriptor: ClusterDescriptor) {
         val services = coreApi.listNamespacedService(
             descriptor.namespace,
             null,
             null,
             null,
             null,
-            "cluster=${descriptor.name},environment=${descriptor.environment}",
+            "cluster=${descriptor.name},environment=${descriptor.environment},owner=${owner}",
             null,
             null,
             30,
@@ -147,14 +147,14 @@ object ClusterDeleteHandler {
         }
     }
 
-    private fun deletePersistentVolumeClaims(coreApi: CoreV1Api, descriptor: ClusterDescriptor) {
+    private fun deletePersistentVolumeClaims(coreApi: CoreV1Api, owner: String, descriptor: ClusterDescriptor) {
         val volumeClaims = coreApi.listNamespacedPersistentVolumeClaim(
             descriptor.namespace,
             null,
             null,
             null,
             null,
-            "cluster=${descriptor.name},environment=${descriptor.environment}",
+            "cluster=${descriptor.name},environment=${descriptor.environment},owner=${owner}",
             null,
             null,
             30,

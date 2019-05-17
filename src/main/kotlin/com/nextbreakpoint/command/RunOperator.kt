@@ -128,7 +128,7 @@ class RunOperator {
             if (divergentClusters.containsKey(clusterConfig.descriptor)) {
                 logger.info("Deleting cluster ${clusterConfig.descriptor.name}...")
 
-                ClusterDeleteHandler.execute(clusterConfig.descriptor)
+                ClusterDeleteHandler.execute("flink-operator", clusterConfig.descriptor)
             }
         }
 
@@ -170,45 +170,16 @@ class RunOperator {
     ) {
         val pendingDeleteClusters = mutableSetOf<ClusterDescriptor>()
 
-        jobmanagerServices.forEach { (descriptor, _) ->
-            if (!pendingDeleteClusters.contains(descriptor) && clusterConfigs[descriptor] == null) {
-                pendingDeleteClusters.add(descriptor)
-            }
-        }
-
-        sidecarDeployments.forEach { (descriptor, _) ->
-            if (!pendingDeleteClusters.contains(descriptor) && clusterConfigs[descriptor] == null) {
-                pendingDeleteClusters.add(descriptor)
-            }
-        }
-
-        jobmanagerStatefulSets.forEach { (descriptor, _) ->
-            if (!pendingDeleteClusters.contains(descriptor) && clusterConfigs[descriptor] == null) {
-                pendingDeleteClusters.add(descriptor)
-            }
-        }
-
-        taskmanagerStatefulSets.forEach { (descriptor, _) ->
-            if (!pendingDeleteClusters.contains(descriptor) && clusterConfigs[descriptor] == null) {
-                pendingDeleteClusters.add(descriptor)
-            }
-        }
-
-        jobmanagerPersistentVolumeClaims.forEach { (descriptor, _) ->
-            if (!pendingDeleteClusters.contains(descriptor) && clusterConfigs[descriptor] == null) {
-                pendingDeleteClusters.add(descriptor)
-            }
-        }
-
-        taskmanagerPersistentVolumeClaims.forEach { (descriptor, _) ->
-            if (!pendingDeleteClusters.contains(descriptor) && clusterConfigs[descriptor] == null) {
-                pendingDeleteClusters.add(descriptor)
-            }
-        }
+        pendingDeleteClusters.addAll(jobmanagerServices.filter { (descriptor, _) -> clusterConfigs[descriptor] == null }.keys)
+        pendingDeleteClusters.addAll(sidecarDeployments.filter { (descriptor, _) -> clusterConfigs[descriptor] == null }.keys)
+        pendingDeleteClusters.addAll(jobmanagerStatefulSets.filter { (descriptor, _) -> clusterConfigs[descriptor] == null }.keys)
+        pendingDeleteClusters.addAll(taskmanagerStatefulSets.filter { (descriptor, _) -> clusterConfigs[descriptor] == null }.keys)
+        pendingDeleteClusters.addAll(jobmanagerPersistentVolumeClaims.filter { (descriptor, _) -> clusterConfigs[descriptor] == null }.keys)
+        pendingDeleteClusters.addAll(taskmanagerPersistentVolumeClaims.filter { (descriptor, _) -> clusterConfigs[descriptor] == null }.keys)
 
         pendingDeleteClusters.forEach {
             logger.info("Deleting orphan cluster ${it.name}...")
-            ClusterDeleteHandler.execute(it)
+            ClusterDeleteHandler.execute("flink-operator", it)
         }
     }
 
@@ -257,9 +228,21 @@ class RunOperator {
 
         thread {
             watchResources(operatorConfig.namespace, operationQueue, { descriptor, resource ->
-                if (resource.metadata.labels.get("role").equals("jobmanager")) jobmanagerStatefulSets.put(descriptor, resource) else taskmanagerStatefulSets.put(descriptor, resource)
+                when {
+                    resource.metadata.labels.get("role") == "jobmanager" ->
+                        jobmanagerStatefulSets.put(descriptor, resource)
+
+                    resource.metadata.labels.get("role") == "taskmanager" ->
+                        taskmanagerStatefulSets.put(descriptor, resource)
+                }
             }, { descriptor, resource ->
-                if (resource.metadata.labels.get("role").equals("jobmanager")) jobmanagerStatefulSets.remove(descriptor) else taskmanagerStatefulSets.remove(descriptor)
+                when {
+                    resource.metadata.labels.get("role") == "jobmanager" ->
+                        jobmanagerStatefulSets.remove(descriptor)
+
+                    resource.metadata.labels.get("role") == "taskmanager" ->
+                        taskmanagerStatefulSets.remove(descriptor)
+                }
             }, {
                 it.metadata.labels.get("cluster")
             }, {
@@ -271,9 +254,21 @@ class RunOperator {
 
         thread {
             watchResources(operatorConfig.namespace, operationQueue, { descriptor, resource ->
-                if (resource.metadata.labels.get("role").equals("jobmanager")) jobmanagerPersistentVolumeClaims.put(descriptor, resource) else taskmanagerPersistentVolumeClaims.put(descriptor, resource)
+                when {
+                    resource.metadata.labels.get("role") == "jobmanager" ->
+                        jobmanagerPersistentVolumeClaims.put(descriptor, resource)
+
+                    resource.metadata.labels.get("role") == "taskmanager" ->
+                        taskmanagerPersistentVolumeClaims.put(descriptor, resource)
+                }
             }, { descriptor, resource ->
-                if (resource.metadata.labels.get("role").equals("jobmanager")) jobmanagerPersistentVolumeClaims.remove(descriptor) else taskmanagerPersistentVolumeClaims.remove(descriptor)
+                when {
+                    resource.metadata.labels.get("role") == "jobmanager" ->
+                        jobmanagerPersistentVolumeClaims.remove(descriptor)
+
+                    resource.metadata.labels.get("role") == "taskmanager" ->
+                        taskmanagerPersistentVolumeClaims.remove(descriptor)
+                }
             }, {
                 it.metadata.labels.get("cluster")
             }, {
