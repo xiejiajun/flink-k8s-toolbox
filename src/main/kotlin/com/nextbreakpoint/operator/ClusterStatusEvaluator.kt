@@ -253,7 +253,7 @@ class ClusterStatusEvaluator {
 
             val jobmanagerRpcAddressEnvVar = container.env.filter { it.name == "JOB_MANAGER_RPC_ADDRESS" }.firstOrNull()
 
-            if (jobmanagerRpcAddressEnvVar?.value == null || (actualClusterResources.jobmanagerService != null && jobmanagerRpcAddressEnvVar.value.toString() != "${actualClusterResources.jobmanagerService.metadata.name}:8081")) {
+            if (jobmanagerRpcAddressEnvVar?.value == null || (actualClusterResources.jobmanagerService != null && jobmanagerRpcAddressEnvVar.value.toString() != "${actualClusterResources.jobmanagerService.metadata.name}")) {
                 statusReport.add("missing or invalid environment variable JOB_MANAGER_RPC_ADDRESS")
             }
 
@@ -377,7 +377,7 @@ class ClusterStatusEvaluator {
 
             val taskmanagerRpcAddressEnvVar = container.env.filter { it.name == "JOB_MANAGER_RPC_ADDRESS" }.firstOrNull()
 
-            if (taskmanagerRpcAddressEnvVar?.value == null || (actualClusterResources.jobmanagerService != null && taskmanagerRpcAddressEnvVar.value.toString() != "${actualClusterResources.jobmanagerService.metadata.name}:8081")) {
+            if (taskmanagerRpcAddressEnvVar?.value == null || (actualClusterResources.jobmanagerService != null && taskmanagerRpcAddressEnvVar.value.toString() != "${actualClusterResources.jobmanagerService.metadata.name}")) {
                 statusReport.add("missing or invalid environment variable JOB_MANAGER_RPC_ADDRESS")
             }
 
