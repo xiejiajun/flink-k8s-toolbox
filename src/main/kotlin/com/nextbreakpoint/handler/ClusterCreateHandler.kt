@@ -2,6 +2,7 @@ package com.nextbreakpoint.handler
 
 import com.nextbreakpoint.operator.model.ClusterConfig
 import com.nextbreakpoint.operator.ClusterResourcesBuilder
+import com.nextbreakpoint.operator.DefaultClusterResourcesFactory
 import io.kubernetes.client.apis.AppsV1Api
 import io.kubernetes.client.apis.CoreV1Api
 import org.apache.log4j.Logger
@@ -33,6 +34,7 @@ object ClusterCreateHandler {
             }
 
             val (jobmanagerService, sidecarDeployment, jobmanagerStatefulSet, taskmanagerStatefulSet) = ClusterResourcesBuilder(
+                DefaultClusterResourcesFactory,
                 owner,
                 clusterConfig
             ).build()
