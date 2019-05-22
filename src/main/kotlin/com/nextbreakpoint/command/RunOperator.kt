@@ -4,7 +4,7 @@ import com.nextbreakpoint.handler.ClusterCreateHandler
 import com.nextbreakpoint.handler.ClusterDeleteHandler
 import com.nextbreakpoint.model.*
 import com.nextbreakpoint.operator.*
-import com.nextbreakpoint.operator.model.ClusterConfig
+import com.nextbreakpoint.operator.model.Cluster
 import com.nextbreakpoint.operator.ClusterConfigBuilder
 import com.nextbreakpoint.operator.model.ClusterResources
 import com.nextbreakpoint.operator.model.ClusterStatus
@@ -88,7 +88,7 @@ class RunOperator {
             clusterConfig -> clusterConfig.descriptor to clusterConfig
         }.toMap()
 
-        val divergentClusters = mutableMapOf<ClusterDescriptor, ClusterConfig>()
+        val divergentClusters = mutableMapOf<ClusterDescriptor, Cluster>()
 
         actualClusterConfigs.values.forEach { clusterConfig ->
             val jobmnagerService = jobmanagerServices.get(clusterConfig.descriptor)
@@ -208,7 +208,7 @@ class RunOperator {
         }.toList()
 
     private fun deleteOrphans(
-        clusterConfigs: Map<ClusterDescriptor, ClusterConfig>,
+        clusterConfigs: Map<ClusterDescriptor, Cluster>,
         jobmanagerServices: MutableMap<ClusterDescriptor, V1Service>,
         sidecarDeployments: MutableMap<ClusterDescriptor, V1Deployment>,
         jobmanagerStatefulSets: MutableMap<ClusterDescriptor, V1StatefulSet>,

@@ -132,29 +132,29 @@ class FlinkK8SToolboxMain {
         private val taskmanagerEnvVar: List<String> by option(help="A TaskManager's environment variable").multiple()
 
         override fun run() {
-            val config = ClusterConfig(
+            val config = Cluster(
                 descriptor = ClusterDescriptor(
                     namespace = namespace,
                     name = clusterName,
                     environment = environment
                 ),
-                jobmanager = JobManagerConfig(
+                jobmanager = JobManager(
                     image = flinkImage,
                     pullPolicy = imagePullPolicy,
                     pullSecrets = imagePullSecrets,
                     serviceMode = jobmanagerServiceMode,
                     serviceAccount = jobmanagerServiceAccount,
                     environmentVariables = expandVariables(jobmanagerEnvVar),
-                    storage = StorageConfig(
+                    storage = Storage(
                         size = jobmanagerStorageSize,
                         storageClass = jobmanagerStorageClass
                     ),
-                    resources = ResourcesConfig(
+                    resources = Resources(
                         cpus = jobmanagerCpus,
                         memory = jobmanagerMemory
                     )
                 ),
-                taskmanager = TaskManagerConfig(
+                taskmanager = TaskManager(
                     image = flinkImage,
                     pullPolicy = imagePullPolicy,
                     pullSecrets = imagePullSecrets,
@@ -162,16 +162,16 @@ class FlinkK8SToolboxMain {
                     taskSlots = taskmanagerTaskSlots,
                     replicas = taskmanagerReplicas,
                     environmentVariables = expandVariables(taskmanagerEnvVar),
-                    storage = StorageConfig(
+                    storage = Storage(
                         size = taskmanagerStorageSize,
                         storageClass = taskmanagerStorageClass
                     ),
-                    resources = ResourcesConfig(
+                    resources = Resources(
                         cpus = taskmanagerCpus,
                         memory = taskmanageMemory
                     )
                 ),
-                sidecar = SidecarConfig(
+                sidecar = Sidecar(
                     image = sidecarImage,
                     pullPolicy = imagePullPolicy,
                     serviceAccount = sidecarServiceAccount,
@@ -234,7 +234,7 @@ class FlinkK8SToolboxMain {
                     name = clusterName,
                     environment = environment
                 ),
-                sidecar = SidecarConfig(
+                sidecar = Sidecar(
                     image = sidecarImage,
                     pullPolicy = imagePullPolicy,
                     pullSecrets = imagePullSecrets,

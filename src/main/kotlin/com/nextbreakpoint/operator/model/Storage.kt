@@ -1,6 +1,6 @@
 package com.nextbreakpoint.operator.model
 
-data class StorageConfig(
+data class Storage(
     val storageClass: String,
     val size: Int
 )

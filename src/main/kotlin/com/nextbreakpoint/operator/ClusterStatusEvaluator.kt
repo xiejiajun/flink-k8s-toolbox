@@ -4,20 +4,20 @@ import com.nextbreakpoint.operator.model.*
 
 class ClusterStatusEvaluator {
     fun status(
-        targetClusterConfig: ClusterConfig,
+        targetCluster: Cluster,
         resources: ClusterResources
     ): ClusterStatus {
-        val jobmanagerServiceStatus = evaluateJobManagerServiceStatus(resources, targetClusterConfig)
+        val jobmanagerServiceStatus = evaluateJobManagerServiceStatus(resources, targetCluster)
 
-        val sidecarDeploymentStatus = evaluateSidecarDeploymentStatus(resources, targetClusterConfig)
+        val sidecarDeploymentStatus = evaluateSidecarDeploymentStatus(resources, targetCluster)
 
-        val jobmanagerStatefulSetStatus = evaluateJobManagerStatefulSetStatus(resources, targetClusterConfig)
+        val jobmanagerStatefulSetStatus = evaluateJobManagerStatefulSetStatus(resources, targetCluster)
 
-        val taskmanagerStatefulSetStatus = evaluateTaskManagerStatefulSetStatus(resources, targetClusterConfig)
+        val taskmanagerStatefulSetStatus = evaluateTaskManagerStatefulSetStatus(resources, targetCluster)
 
-        val jobmanagerPersistentVolumeClaimStatus = evaluateJobManagerPersistentVolumeClaimStatus(resources, targetClusterConfig)
+        val jobmanagerPersistentVolumeClaimStatus = evaluateJobManagerPersistentVolumeClaimStatus(resources, targetCluster)
 
-        val taskmanagerPersistentVolumeClaimStatus = evaluateTaskManagerPersistentVolumeClaimStatus(resources, targetClusterConfig)
+        val taskmanagerPersistentVolumeClaimStatus = evaluateTaskManagerPersistentVolumeClaimStatus(resources, targetCluster)
 
         return ClusterStatus(
             jobmanagerService = jobmanagerServiceStatus,
@@ -31,7 +31,7 @@ class ClusterStatusEvaluator {
 
     private fun evaluateSidecarDeploymentStatus(
         actualClusterResources: ClusterResources,
-        targetClusterConfig: ClusterConfig
+        targetCluster: Cluster
     ): Pair<ResourceStatus, List<String>> {
         val sidecarDeployment = actualClusterResources.sidecarDeployment ?: return ResourceStatus.MISSING to listOf()
 
@@ -41,22 +41,22 @@ class ClusterStatusEvaluator {
             statusReport.add("component label missing or invalid")
         }
 
-        if (sidecarDeployment.metadata.labels["cluster"]?.equals(targetClusterConfig.descriptor.name) != true) {
+        if (sidecarDeployment.metadata.labels["cluster"]?.equals(targetCluster.descriptor.name) != true) {
             statusReport.add("cluster label missing or invalid")
         }
 
-        if (sidecarDeployment.metadata.labels["environment"]?.equals(targetClusterConfig.descriptor.environment) != true) {
+        if (sidecarDeployment.metadata.labels["environment"]?.equals(targetCluster.descriptor.environment) != true) {
             statusReport.add("environment label missing or invalid")
         }
 
-        if (sidecarDeployment.spec.template.spec.serviceAccountName != targetClusterConfig.sidecar.serviceAccount) {
+        if (sidecarDeployment.spec.template.spec.serviceAccountName != targetCluster.sidecar.serviceAccount) {
             statusReport.add("service account does not match")
         }
 
         if (sidecarDeployment.spec.template.spec.imagePullSecrets.size != 1) {
             statusReport.add("unexpected number of pull secrets")
         } else {
-            if (sidecarDeployment.spec.template.spec.imagePullSecrets[0].name != targetClusterConfig.sidecar.pullSecrets) {
+            if (sidecarDeployment.spec.template.spec.imagePullSecrets[0].name != targetCluster.sidecar.pullSecrets) {
                 statusReport.add("pull secrets don't match")
             }
         }
@@ -66,11 +66,11 @@ class ClusterStatusEvaluator {
         } else {
             val container = sidecarDeployment.spec.template.spec.containers.get(0)
 
-            if (container.image != targetClusterConfig.sidecar.image) {
+            if (container.image != targetCluster.sidecar.image) {
                 statusReport.add("container image does not match")
             }
 
-            if (container.imagePullPolicy != targetClusterConfig.sidecar.pullPolicy) {
+            if (container.imagePullPolicy != targetCluster.sidecar.pullPolicy) {
                 statusReport.add("container image pull policy does not match")
             }
 
@@ -94,31 +94,31 @@ class ClusterStatusEvaluator {
 
                     val sidecarSavepoint = extractArgument(container.args, "--savepoint")
 
-                    if (sidecarNamespace == null || sidecarNamespace != targetClusterConfig.descriptor.namespace) {
+                    if (sidecarNamespace == null || sidecarNamespace != targetCluster.descriptor.namespace) {
                         statusReport.add("unexpected argument namespace: ${container.args.joinToString(separator = ",")}")
                     }
 
-                    if (sidecarEnvironment == null || sidecarEnvironment != targetClusterConfig.descriptor.environment) {
+                    if (sidecarEnvironment == null || sidecarEnvironment != targetCluster.descriptor.environment) {
                         statusReport.add("unexpected argument environment: ${container.args.joinToString(separator = ",")}")
                     }
 
-                    if (sidecarClusterName == null || sidecarClusterName != targetClusterConfig.descriptor.name) {
+                    if (sidecarClusterName == null || sidecarClusterName != targetCluster.descriptor.name) {
                         statusReport.add("unexpected argument cluster name: ${container.args.joinToString(separator = ",")}")
                     }
 
-                    if (sidecarParallelism == null || sidecarParallelism.toInt() != targetClusterConfig.sidecar.parallelism) {
+                    if (sidecarParallelism == null || sidecarParallelism.toInt() != targetCluster.sidecar.parallelism) {
                         statusReport.add("unexpected argument parallelism: ${container.args.joinToString(separator = ",")}")
                     }
 
-                    if (sidecarClassName != targetClusterConfig.sidecar.className) {
+                    if (sidecarClassName != targetCluster.sidecar.className) {
                         statusReport.add("unexpected argument class name: ${container.args.joinToString(separator = ",")}")
                     }
 
-                    if (sidecarSavepoint != targetClusterConfig.sidecar.savepoint) {
+                    if (sidecarSavepoint != targetCluster.sidecar.savepoint) {
                         statusReport.add("unexpected argument savepoint: ${container.args.joinToString(separator = ",")}")
                     }
 
-                    if (sidecarJarPath != targetClusterConfig.sidecar.jarPath) {
+                    if (sidecarJarPath != targetCluster.sidecar.jarPath) {
                         statusReport.add("unexpected argument jar path: ${container.args.joinToString(separator = ",")}")
                     }
 
@@ -130,7 +130,7 @@ class ClusterStatusEvaluator {
 
                     val arguments = if (sidecarArguments.isNotEmpty()) sidecarArguments.joinToString(" ") else null
 
-                    if (arguments != targetClusterConfig.sidecar.arguments) {
+                    if (arguments != targetCluster.sidecar.arguments) {
                         statusReport.add("sidecar arguments don't match: ${container.args.joinToString(separator = ",")}")
                     }
                 }
@@ -149,7 +149,7 @@ class ClusterStatusEvaluator {
 
     private fun evaluateJobManagerServiceStatus(
         actualClusterResources: ClusterResources,
-        targetClusterConfig: ClusterConfig
+        targetCluster: Cluster
     ): Pair<ResourceStatus, List<String>> {
         val jobmanagerService = actualClusterResources.jobmanagerService ?: return ResourceStatus.MISSING to listOf()
 
@@ -163,15 +163,15 @@ class ClusterStatusEvaluator {
             statusReport.add("component label missing or invalid")
         }
 
-        if (jobmanagerService.metadata.labels["cluster"]?.equals(targetClusterConfig.descriptor.name) != true) {
+        if (jobmanagerService.metadata.labels["cluster"]?.equals(targetCluster.descriptor.name) != true) {
             statusReport.add("cluster label missing or invalid")
         }
 
-        if (jobmanagerService.metadata.labels["environment"]?.equals(targetClusterConfig.descriptor.environment) != true) {
+        if (jobmanagerService.metadata.labels["environment"]?.equals(targetCluster.descriptor.environment) != true) {
             statusReport.add("environment label missing or invalid")
         }
 
-        if (jobmanagerService.spec.type != targetClusterConfig.jobmanager.serviceMode) {
+        if (jobmanagerService.spec.type != targetCluster.jobmanager.serviceMode) {
             statusReport.add("service mode doesn't match")
         }
 
@@ -184,7 +184,7 @@ class ClusterStatusEvaluator {
 
     private fun evaluateJobManagerStatefulSetStatus(
         actualClusterResources: ClusterResources,
-        targetClusterConfig: ClusterConfig
+        targetCluster: Cluster
     ): Pair<ResourceStatus, List<String>> {
         val jobmanagerStatefulSet = actualClusterResources.jobmanagerStatefulSet ?: return ResourceStatus.MISSING to listOf()
 
@@ -198,22 +198,22 @@ class ClusterStatusEvaluator {
             statusReport.add("component label missing or invalid")
         }
 
-        if (jobmanagerStatefulSet.metadata.labels["cluster"]?.equals(targetClusterConfig.descriptor.name) != true) {
+        if (jobmanagerStatefulSet.metadata.labels["cluster"]?.equals(targetCluster.descriptor.name) != true) {
             statusReport.add("cluster label missing or invalid")
         }
 
-        if (jobmanagerStatefulSet.metadata.labels["environment"]?.equals(targetClusterConfig.descriptor.environment) != true) {
+        if (jobmanagerStatefulSet.metadata.labels["environment"]?.equals(targetCluster.descriptor.environment) != true) {
             statusReport.add("environment label missing or invalid")
         }
 
-        if (jobmanagerStatefulSet.spec.template.spec.serviceAccountName != targetClusterConfig.jobmanager.serviceAccount) {
+        if (jobmanagerStatefulSet.spec.template.spec.serviceAccountName != targetCluster.jobmanager.serviceAccount) {
             statusReport.add("service account does not match")
         }
 
         if (jobmanagerStatefulSet.spec.template.spec.imagePullSecrets.size != 1) {
             statusReport.add("unexpected number of pull secrets")
         } else {
-            if (jobmanagerStatefulSet.spec.template.spec.imagePullSecrets[0].name != targetClusterConfig.jobmanager.pullSecrets) {
+            if (jobmanagerStatefulSet.spec.template.spec.imagePullSecrets[0].name != targetCluster.jobmanager.pullSecrets) {
                 statusReport.add("pull secrets don't match")
             }
         }
@@ -221,11 +221,11 @@ class ClusterStatusEvaluator {
         if (jobmanagerStatefulSet.spec.volumeClaimTemplates.size != 1) {
             statusReport.add("unexpected number of volume claim templates")
         } else {
-            if (jobmanagerStatefulSet.spec.volumeClaimTemplates[0].spec.storageClassName != targetClusterConfig.jobmanager.storage.storageClass) {
+            if (jobmanagerStatefulSet.spec.volumeClaimTemplates[0].spec.storageClassName != targetCluster.jobmanager.storage.storageClass) {
                 statusReport.add("volume claim storage class doesn't match")
             }
 
-            if (jobmanagerStatefulSet.spec.volumeClaimTemplates[0].spec.resources.requests.get("storage")?.number?.toInt()?.equals(targetClusterConfig.jobmanager.storage.size) != true) {
+            if (jobmanagerStatefulSet.spec.volumeClaimTemplates[0].spec.resources.requests.get("storage")?.number?.toInt()?.equals(targetCluster.jobmanager.storage.size) != true) {
                 statusReport.add("volume claim size doesn't match")
             }
         }
@@ -235,19 +235,19 @@ class ClusterStatusEvaluator {
         } else {
             val container = jobmanagerStatefulSet.spec.template.spec.containers.get(0)
 
-            if (container.image != targetClusterConfig.jobmanager.image) {
+            if (container.image != targetCluster.jobmanager.image) {
                 statusReport.add("container image does not match")
             }
 
-            if (container.imagePullPolicy != targetClusterConfig.jobmanager.pullPolicy) {
+            if (container.imagePullPolicy != targetCluster.jobmanager.pullPolicy) {
                 statusReport.add("container image pull policy does not match")
             }
 
-            if (container.resources.limits.get("cpu")?.number?.toFloat()?.equals(targetClusterConfig.jobmanager.resources.cpus) != true) {
+            if (container.resources.limits.get("cpu")?.number?.toFloat()?.equals(targetCluster.jobmanager.resources.cpus) != true) {
                 statusReport.add("container cpu limit doesn't match")
             }
 
-            if (container.resources.requests.get("memory")?.number?.toInt()?.equals(targetClusterConfig.jobmanager.resources.memory * 1024 * 1024) != true) {
+            if (container.resources.requests.get("memory")?.number?.toInt()?.equals(targetCluster.jobmanager.resources.memory * 1024 * 1024) != true) {
                 statusReport.add("container memory limit doesn't match")
             }
 
@@ -259,13 +259,13 @@ class ClusterStatusEvaluator {
 
             val jobmanagerEnvironmentEnvVar = container.env.filter { it.name == "FLINK_ENVIRONMENT" }.firstOrNull()
 
-            if (jobmanagerEnvironmentEnvVar?.value == null || jobmanagerEnvironmentEnvVar.value.toString() != targetClusterConfig.descriptor.environment) {
+            if (jobmanagerEnvironmentEnvVar?.value == null || jobmanagerEnvironmentEnvVar.value.toString() != targetCluster.descriptor.environment) {
                 statusReport.add("missing or invalid environment variable FLINK_ENVIRONMENT")
             }
 
             val jobmanagerMemoryEnvVar = container.env.filter { it.name == "FLINK_JM_HEAP" }.firstOrNull()
 
-            if (jobmanagerMemoryEnvVar?.value == null || jobmanagerMemoryEnvVar.value.toInt() < targetClusterConfig.jobmanager.resources.memory) {
+            if (jobmanagerMemoryEnvVar?.value == null || jobmanagerMemoryEnvVar.value.toInt() < targetCluster.jobmanager.resources.memory) {
                 statusReport.add("missing or invalid environment variable FLINK_JM_HEAP")
             }
 
@@ -290,7 +290,7 @@ class ClusterStatusEvaluator {
                 .map { EnvironmentVariable(it.name, it.value) }
                 .toList()
 
-            if (jobmanagerEnvironmentVariables != targetClusterConfig.jobmanager.environmentVariables) {
+            if (jobmanagerEnvironmentVariables != targetCluster.jobmanager.environmentVariables) {
                 statusReport.add("container environment variables don't match")
             }
         }
@@ -304,7 +304,7 @@ class ClusterStatusEvaluator {
 
     private fun evaluateTaskManagerStatefulSetStatus(
         actualClusterResources: ClusterResources,
-        targetClusterConfig: ClusterConfig
+        targetCluster: Cluster
     ): Pair<ResourceStatus, List<String>> {
         val taskmanagerStatefulSet = actualClusterResources.taskmanagerStatefulSet ?: return ResourceStatus.MISSING to listOf()
 
@@ -318,22 +318,22 @@ class ClusterStatusEvaluator {
             statusReport.add("component label missing or invalid")
         }
 
-        if (taskmanagerStatefulSet.metadata.labels["cluster"]?.equals(targetClusterConfig.descriptor.name) != true) {
+        if (taskmanagerStatefulSet.metadata.labels["cluster"]?.equals(targetCluster.descriptor.name) != true) {
             statusReport.add("cluster label missing or invalid")
         }
 
-        if (taskmanagerStatefulSet.metadata.labels["environment"]?.equals(targetClusterConfig.descriptor.environment) != true) {
+        if (taskmanagerStatefulSet.metadata.labels["environment"]?.equals(targetCluster.descriptor.environment) != true) {
             statusReport.add("environment label missing or invalid")
         }
 
-        if (taskmanagerStatefulSet.spec.template.spec.serviceAccountName != targetClusterConfig.taskmanager.serviceAccount) {
+        if (taskmanagerStatefulSet.spec.template.spec.serviceAccountName != targetCluster.taskmanager.serviceAccount) {
             statusReport.add("service account does not match")
         }
 
         if (taskmanagerStatefulSet.spec.template.spec.imagePullSecrets.size != 1) {
             statusReport.add("unexpected number of pull secrets")
         } else {
-            if (taskmanagerStatefulSet.spec.template.spec.imagePullSecrets[0].name != targetClusterConfig.taskmanager.pullSecrets) {
+            if (taskmanagerStatefulSet.spec.template.spec.imagePullSecrets[0].name != targetCluster.taskmanager.pullSecrets) {
                 statusReport.add("pull secrets don't match")
             }
         }
@@ -341,16 +341,16 @@ class ClusterStatusEvaluator {
         if (taskmanagerStatefulSet.spec.volumeClaimTemplates.size != 1) {
             statusReport.add("unexpected number of volume claim templates")
         } else {
-            if (taskmanagerStatefulSet.spec.volumeClaimTemplates[0].spec.storageClassName != targetClusterConfig.taskmanager.storage.storageClass) {
+            if (taskmanagerStatefulSet.spec.volumeClaimTemplates[0].spec.storageClassName != targetCluster.taskmanager.storage.storageClass) {
                 statusReport.add("volume claim storage class doesn't match")
             }
 
-            if (taskmanagerStatefulSet.spec.volumeClaimTemplates[0].spec.resources.requests.get("storage")?.number?.toInt()?.equals(targetClusterConfig.taskmanager.storage.size) != true) {
+            if (taskmanagerStatefulSet.spec.volumeClaimTemplates[0].spec.resources.requests.get("storage")?.number?.toInt()?.equals(targetCluster.taskmanager.storage.size) != true) {
                 statusReport.add("volume claim size doesn't match")
             }
         }
 
-        if (taskmanagerStatefulSet.spec.replicas != targetClusterConfig.taskmanager.replicas) {
+        if (taskmanagerStatefulSet.spec.replicas != targetCluster.taskmanager.replicas) {
             statusReport.add("number of replicas doesn't match")
         }
 
@@ -359,19 +359,19 @@ class ClusterStatusEvaluator {
         } else {
             val container = taskmanagerStatefulSet.spec.template.spec.containers.get(0)
 
-            if (container.image != targetClusterConfig.taskmanager.image) {
+            if (container.image != targetCluster.taskmanager.image) {
                 statusReport.add("container image does not match")
             }
 
-            if (container.imagePullPolicy != targetClusterConfig.taskmanager.pullPolicy) {
+            if (container.imagePullPolicy != targetCluster.taskmanager.pullPolicy) {
                 statusReport.add("container image pull policy does not match")
             }
 
-            if (container.resources.limits.get("cpu")?.number?.toFloat()?.equals(targetClusterConfig.taskmanager.resources.cpus) != true) {
+            if (container.resources.limits.get("cpu")?.number?.toFloat()?.equals(targetCluster.taskmanager.resources.cpus) != true) {
                 statusReport.add("container cpu limit doesn't match")
             }
 
-            if (container.resources.requests.get("memory")?.number?.toInt()?.equals(targetClusterConfig.taskmanager.resources.memory * 1024 * 1024) != true) {
+            if (container.resources.requests.get("memory")?.number?.toInt()?.equals(targetCluster.taskmanager.resources.memory * 1024 * 1024) != true) {
                 statusReport.add("container memory limit doesn't match")
             }
 
@@ -383,19 +383,19 @@ class ClusterStatusEvaluator {
 
             val taskmanagerEnvironmentEnvVar = container.env.filter { it.name == "FLINK_ENVIRONMENT" }.firstOrNull()
 
-            if (taskmanagerEnvironmentEnvVar?.value == null || taskmanagerEnvironmentEnvVar.value.toString() != targetClusterConfig.descriptor.environment) {
+            if (taskmanagerEnvironmentEnvVar?.value == null || taskmanagerEnvironmentEnvVar.value.toString() != targetCluster.descriptor.environment) {
                 statusReport.add("missing or invalid environment variable FLINK_ENVIRONMENT")
             }
 
             val taskmanagerMemoryEnvVar = container.env.filter { it.name == "FLINK_TM_HEAP" }.firstOrNull()
 
-            if (taskmanagerMemoryEnvVar?.value == null || taskmanagerMemoryEnvVar.value.toInt() < targetClusterConfig.taskmanager.resources.memory) {
+            if (taskmanagerMemoryEnvVar?.value == null || taskmanagerMemoryEnvVar.value.toInt() < targetCluster.taskmanager.resources.memory) {
                 statusReport.add("missing or invalid environment variable FLINK_TM_HEAP")
             }
 
             val taskmanagerTaskSlotsEnvVar = container.env.filter { it.name == "TASK_MANAGER_NUMBER_OF_TASK_SLOTS" }.firstOrNull()
 
-            if (taskmanagerTaskSlotsEnvVar?.value == null || taskmanagerTaskSlotsEnvVar.value.toInt() != targetClusterConfig.taskmanager.taskSlots) {
+            if (taskmanagerTaskSlotsEnvVar?.value == null || taskmanagerTaskSlotsEnvVar.value.toInt() != targetCluster.taskmanager.taskSlots) {
                 statusReport.add("missing or invalid environment variable TASK_MANAGER_NUMBER_OF_TASK_SLOTS")
             }
 
@@ -421,7 +421,7 @@ class ClusterStatusEvaluator {
                 .map { EnvironmentVariable(it.name, it.value) }
                 .toList()
 
-            if (!taskmanagerEnvironmentVariables.equals(targetClusterConfig.taskmanager.environmentVariables)) {
+            if (!taskmanagerEnvironmentVariables.equals(targetCluster.taskmanager.environmentVariables)) {
                 statusReport.add("container environment variables don't match")
             }
         }
@@ -435,7 +435,7 @@ class ClusterStatusEvaluator {
 
     private fun evaluateJobManagerPersistentVolumeClaimStatus(
         actualClusterResources: ClusterResources,
-        targetClusterConfig: ClusterConfig
+        targetCluster: Cluster
     ): Pair<ResourceStatus, List<String>> {
         val jobmanagerPersistentVolumeClaim = actualClusterResources.jobmanagerPersistentVolumeClaim ?: return ResourceStatus.MISSING to listOf()
 
@@ -449,15 +449,15 @@ class ClusterStatusEvaluator {
             statusReport.add("component label missing or invalid")
         }
 
-        if (jobmanagerPersistentVolumeClaim.metadata.labels["cluster"]?.equals(targetClusterConfig.descriptor.name) != true) {
+        if (jobmanagerPersistentVolumeClaim.metadata.labels["cluster"]?.equals(targetCluster.descriptor.name) != true) {
             statusReport.add("cluster label missing or invalid")
         }
 
-        if (jobmanagerPersistentVolumeClaim.metadata.labels["environment"]?.equals(targetClusterConfig.descriptor.environment) != true) {
+        if (jobmanagerPersistentVolumeClaim.metadata.labels["environment"]?.equals(targetCluster.descriptor.environment) != true) {
             statusReport.add("environment label missing or invalid")
         }
 
-        if (jobmanagerPersistentVolumeClaim.spec.storageClassName != targetClusterConfig.jobmanager.storage.storageClass) {
+        if (jobmanagerPersistentVolumeClaim.spec.storageClassName != targetCluster.jobmanager.storage.storageClass) {
             statusReport.add("persistent volume storage class doesn't match")
         }
 
@@ -470,7 +470,7 @@ class ClusterStatusEvaluator {
 
     private fun evaluateTaskManagerPersistentVolumeClaimStatus(
         actualClusterResources: ClusterResources,
-        targetClusterConfig: ClusterConfig
+        targetCluster: Cluster
     ): Pair<ResourceStatus, List<String>> {
         val taskmanagerPersistentVolumeClaim = actualClusterResources.taskmanagerPersistentVolumeClaim ?: return ResourceStatus.MISSING to listOf()
 
@@ -484,15 +484,15 @@ class ClusterStatusEvaluator {
             statusReport.add("component label missing or invalid")
         }
 
-        if (taskmanagerPersistentVolumeClaim.metadata.labels["cluster"]?.equals(targetClusterConfig.descriptor.name) != true) {
+        if (taskmanagerPersistentVolumeClaim.metadata.labels["cluster"]?.equals(targetCluster.descriptor.name) != true) {
             statusReport.add("cluster label missing or invalid")
         }
 
-        if (taskmanagerPersistentVolumeClaim.metadata.labels["environment"]?.equals(targetClusterConfig.descriptor.environment) != true) {
+        if (taskmanagerPersistentVolumeClaim.metadata.labels["environment"]?.equals(targetCluster.descriptor.environment) != true) {
             statusReport.add("environment label missing or invalid")
         }
 
-        if (taskmanagerPersistentVolumeClaim.spec.storageClassName != targetClusterConfig.taskmanager.storage.storageClass) {
+        if (taskmanagerPersistentVolumeClaim.spec.storageClassName != targetCluster.taskmanager.storage.storageClass) {
             statusReport.add("persistent volume storage class doesn't match")
         }
 

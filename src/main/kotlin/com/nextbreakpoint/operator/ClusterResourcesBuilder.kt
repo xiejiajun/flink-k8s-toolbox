@@ -1,36 +1,36 @@
 package com.nextbreakpoint.operator
 
-import com.nextbreakpoint.operator.model.ClusterConfig
+import com.nextbreakpoint.operator.model.Cluster
 import com.nextbreakpoint.operator.model.ClusterResources
 
 class ClusterResourcesBuilder(
     private val factory: ClusterResourcesFactory = DefaultClusterResourcesFactory,
     private val clusterOwner: String,
-    private val clusterConfig: ClusterConfig
+    private val cluster: Cluster
 ) {
     fun build(): ClusterResources {
         val jobmanagerService = factory.createJobManagerService(
             clusterOwner,
-            clusterConfig.descriptor,
-            clusterConfig.jobmanager.serviceMode
+            cluster.descriptor,
+            cluster.jobmanager.serviceMode
         )
 
         val jobmanagerStatefulSet = factory.createJobManagerStatefulSet(
             clusterOwner,
-            clusterConfig.descriptor,
-            clusterConfig.jobmanager
+            cluster.descriptor,
+            cluster.jobmanager
         )
 
         val sidecarDeployment = factory.createSidecarDeployment(
             clusterOwner,
-            clusterConfig.descriptor,
-            clusterConfig.sidecar
+            cluster.descriptor,
+            cluster.sidecar
         )
 
         val taskmanagerStatefulSet = factory.createTaskManagerStatefulSet(
             clusterOwner,
-            clusterConfig.descriptor,
-            clusterConfig.taskmanager
+            cluster.descriptor,
+            cluster.taskmanager
         )
 
         return ClusterResources(

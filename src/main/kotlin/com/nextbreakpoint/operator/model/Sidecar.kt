@@ -1,6 +1,6 @@
 package com.nextbreakpoint.operator.model
 
-data class SidecarConfig(
+data class Sidecar(
     val image: String,
     val pullSecrets: String?,
     val pullPolicy: String,

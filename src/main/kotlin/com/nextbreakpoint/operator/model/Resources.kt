@@ -1,6 +1,6 @@
 package com.nextbreakpoint.operator.model
 
-data class ResourcesConfig(
+data class Resources(
     val cpus: Float,
     val memory: Int
 )

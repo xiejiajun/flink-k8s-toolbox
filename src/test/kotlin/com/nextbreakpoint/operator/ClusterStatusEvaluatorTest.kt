@@ -3,7 +3,7 @@ package com.nextbreakpoint.operator
 import com.nextbreakpoint.model.ClusterDescriptor
 import com.nextbreakpoint.operator.model.ClusterStatus
 import com.nextbreakpoint.operator.model.ResourceStatus
-import com.nextbreakpoint.operator.model.StorageConfig
+import com.nextbreakpoint.operator.model.Storage
 import com.nextbreakpoint.operator.model.*
 import io.kubernetes.client.custom.Quantity
 import io.kubernetes.client.models.*
@@ -793,7 +793,7 @@ class ClusterStatusEvaluatorTest {
     private fun createPersistentVolumeClaim(
         clusterOwner: String,
         descriptor: ClusterDescriptor,
-        storageConfig: StorageConfig,
+        storage: Storage,
         role: String
     ): V1PersistentVolumeClaim? {
         val persistentVolumeClaim = V1PersistentVolumeClaim()
@@ -804,7 +804,7 @@ class ClusterStatusEvaluatorTest {
         persistentVolumeClaim.metadata.labels = labels
 
         persistentVolumeClaim.spec = V1PersistentVolumeClaimSpec()
-        persistentVolumeClaim.spec.storageClassName = storageConfig.storageClass
+        persistentVolumeClaim.spec.storageClassName = storage.storageClass
 
         return persistentVolumeClaim
     }
@@ -827,8 +827,8 @@ class ClusterStatusEvaluatorTest {
         return mapOf(ownerLabel, clusterLabel, componentLabel, roleLabel, environmentLabel)
     }
 
-    private fun createTestClusterResources(targetClusterConfig: ClusterConfig): ClusterResources {
-        val targetResources = ClusterResourcesBuilder(DefaultClusterResourcesFactory, "flink-operator", targetClusterConfig).build()
+    private fun createTestClusterResources(targetCluster: Cluster): ClusterResources {
+        val targetResources = ClusterResourcesBuilder(DefaultClusterResourcesFactory, "flink-operator", targetCluster).build()
 
         return ClusterResources(
             jobmanagerService = targetResources.jobmanagerService,
@@ -837,14 +837,14 @@ class ClusterStatusEvaluatorTest {
             taskmanagerStatefulSet = targetResources.taskmanagerStatefulSet,
             jobmanagerPersistentVolumeClaim = createPersistentVolumeClaim(
                 "flink-operator",
-                targetClusterConfig.descriptor,
-                targetClusterConfig.jobmanager.storage,
+                targetCluster.descriptor,
+                targetCluster.jobmanager.storage,
                 "jobmanager"
             ),
             taskmanagerPersistentVolumeClaim = createPersistentVolumeClaim(
                 "flink-operator",
-                targetClusterConfig.descriptor,
-                targetClusterConfig.taskmanager.storage,
+                targetCluster.descriptor,
+                targetCluster.taskmanager.storage,
                 "taskmanager"
             )
         )

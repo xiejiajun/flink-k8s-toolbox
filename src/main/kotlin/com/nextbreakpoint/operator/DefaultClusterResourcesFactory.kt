@@ -52,7 +52,7 @@ object DefaultClusterResourcesFactory : ClusterResourcesFactory {
     override fun createSidecarDeployment(
         clusterOwner: String,
         descriptor: ClusterDescriptor,
-        sidecarConfig: SidecarConfig
+        sidecar: Sidecar
     ): V1Deployment {
         val componentLabel = Pair("component", "flink")
 
@@ -85,7 +85,7 @@ object DefaultClusterResourcesFactory : ClusterResourcesFactory {
 
         val arguments = mutableListOf<String>()
 
-        if (sidecarConfig.jarPath != null) {
+        if (sidecar.jarPath != null) {
             arguments.addAll(
                 listOf(
                     "sidecar",
@@ -93,20 +93,20 @@ object DefaultClusterResourcesFactory : ClusterResourcesFactory {
                     "--namespace=${descriptor.namespace}",
                     "--environment=${descriptor.environment}",
                     "--cluster-name=${descriptor.name}",
-                    "--jar-path=${sidecarConfig.jarPath}",
-                    "--parallelism=${sidecarConfig.parallelism}"
+                    "--jar-path=${sidecar.jarPath}",
+                    "--parallelism=${sidecar.parallelism}"
                 )
             )
 
-            if (sidecarConfig.className != null) {
-                arguments.add("--class-name=${sidecarConfig.className}")
+            if (sidecar.className != null) {
+                arguments.add("--class-name=${sidecar.className}")
             }
 
-            if (sidecarConfig.savepoint != null) {
-                arguments.add("--savepoint=${sidecarConfig.savepoint}")
+            if (sidecar.savepoint != null) {
+                arguments.add("--savepoint=${sidecar.savepoint}")
             }
 
-            sidecarConfig.arguments?.split(" ")?.forEach { argument ->
+            sidecar.arguments?.split(" ")?.forEach { argument ->
                 arguments.add("--argument=$argument")
             }
         } else {
@@ -121,9 +121,9 @@ object DefaultClusterResourcesFactory : ClusterResourcesFactory {
             )
         }
 
-        val sidecar = V1Container()
-            .image(sidecarConfig.image)
-            .imagePullPolicy(sidecarConfig.pullPolicy)
+        val sidecarContainer = V1Container()
+            .image(sidecar.image)
+            .imagePullPolicy(sidecar.pullPolicy)
             .name("flink-sidecar")
             .args(arguments)
             .env(
@@ -135,17 +135,17 @@ object DefaultClusterResourcesFactory : ClusterResourcesFactory {
             )
             .resources(createSidecarResourceRequirements())
 
-        val sidecarPullSecrets = if (sidecarConfig.pullSecrets != null) {
+        val sidecarPullSecrets = if (sidecar.pullSecrets != null) {
             listOf(
-                V1LocalObjectReference().name(sidecarConfig.pullSecrets)
+                V1LocalObjectReference().name(sidecar.pullSecrets)
             )
         } else null
 
         val sidecarPodSpec = V1PodSpec()
             .containers(
-                listOf(sidecar)
+                listOf(sidecarContainer)
             )
-            .serviceAccountName(sidecarConfig.serviceAccount)
+            .serviceAccountName(sidecar.serviceAccount)
             .imagePullSecrets(sidecarPullSecrets)
             .affinity(sidecarAffinity)
 
@@ -171,7 +171,7 @@ object DefaultClusterResourcesFactory : ClusterResourcesFactory {
     override fun createJobManagerStatefulSet(
         clusterOwner: String,
         descriptor: ClusterDescriptor,
-        jobmanagerConfig: JobManagerConfig
+        jobmanager: JobManager
     ): V1StatefulSet {
         val componentLabel = Pair("component", "flink")
 
@@ -215,7 +215,7 @@ object DefaultClusterResourcesFactory : ClusterResourcesFactory {
 
         val jobManagerHeapEnvVar = createEnvVar(
             "FLINK_JM_HEAP",
-            jobmanagerConfig.resources.memory.toString()
+            jobmanager.resources.memory.toString()
         )
 
         val rpcAddressEnvVar = createEnvVar(
@@ -240,13 +240,13 @@ object DefaultClusterResourcesFactory : ClusterResourcesFactory {
             rpcAddressEnvVar
         )
 
-        val jobmanagerUserVariables = jobmanagerConfig.environmentVariables.map { createEnvVar(it.name, it.value) }.toList()
+        val jobmanagerUserVariables = jobmanager.environmentVariables.map { createEnvVar(it.name, it.value) }.toList()
 
         jobmanagerVariables.addAll(jobmanagerUserVariables)
 
-        val jobmanager = V1Container()
-            .image(jobmanagerConfig.image)
-            .imagePullPolicy(jobmanagerConfig.pullPolicy)
+        val jobmanagerContainer = V1Container()
+            .image(jobmanager.image)
+            .imagePullPolicy(jobmanager.pullPolicy)
             .name("flink-jobmanager")
             .args(
                 listOf("jobmanager")
@@ -263,19 +263,19 @@ object DefaultClusterResourcesFactory : ClusterResourcesFactory {
             .env(
                 jobmanagerVariables
             )
-            .resources(createResourceRequirements(jobmanagerConfig.resources))
+            .resources(createResourceRequirements(jobmanager.resources))
 
-        val jobmanagerPullSecrets = if (jobmanagerConfig.pullSecrets != null) {
+        val jobmanagerPullSecrets = if (jobmanager.pullSecrets != null) {
             listOf(
-                V1LocalObjectReference().name(jobmanagerConfig.pullSecrets)
+                V1LocalObjectReference().name(jobmanager.pullSecrets)
             )
         } else null
 
         val jobmanagerPodSpec = V1PodSpec()
             .containers(
-                listOf(jobmanager)
+                listOf(jobmanagerContainer)
             )
-            .serviceAccountName(jobmanagerConfig.serviceAccount)
+            .serviceAccountName(jobmanager.serviceAccount)
             .imagePullSecrets(jobmanagerPullSecrets)
             .affinity(jobmanagerAffinity)
 
@@ -283,7 +283,7 @@ object DefaultClusterResourcesFactory : ClusterResourcesFactory {
             createObjectMeta("flink-jobmanager-${descriptor.name}", jobmanagerLabels)
 
         val jobmanagerVolumeClaim =
-            createPersistentVolumeClaimSpec(jobmanagerConfig.storage)
+            createPersistentVolumeClaimSpec(jobmanager.storage)
 
         val jobmanagerStatefulSet = V1StatefulSet()
             .metadata(jobmanagerMetadata)
@@ -315,7 +315,7 @@ object DefaultClusterResourcesFactory : ClusterResourcesFactory {
     override fun createTaskManagerStatefulSet(
         clusterOwner: String,
         descriptor: ClusterDescriptor,
-        taskmanagerConfig: TaskManagerConfig
+        taskmanager: TaskManager
     ): V1StatefulSet {
         val componentLabel = Pair("component", "flink")
 
@@ -357,7 +357,7 @@ object DefaultClusterResourcesFactory : ClusterResourcesFactory {
 
         val taskManagerHeapEnvVar = createEnvVar(
             "FLINK_TM_HEAP",
-            taskmanagerConfig.resources.memory.toString()
+            taskmanager.resources.memory.toString()
         )
 
         val rpcAddressEnvVar = createEnvVar(
@@ -367,7 +367,7 @@ object DefaultClusterResourcesFactory : ClusterResourcesFactory {
 
         val numberOfTaskSlotsEnvVar = createEnvVar(
             "TASK_MANAGER_NUMBER_OF_TASK_SLOTS",
-            taskmanagerConfig.taskSlots.toString()
+            taskmanager.taskSlots.toString()
         )
 
         val jobmanagerSelector = V1LabelSelector().matchLabels(jobmanagerLabels)
@@ -383,13 +383,13 @@ object DefaultClusterResourcesFactory : ClusterResourcesFactory {
             numberOfTaskSlotsEnvVar
         )
 
-        val taskmanagerUserVariables = taskmanagerConfig.environmentVariables.map { createEnvVar(it.name, it.value) }.toList()
+        val taskmanagerUserVariables = taskmanager.environmentVariables.map { createEnvVar(it.name, it.value) }.toList()
 
         taskmanagerVariables.addAll(taskmanagerUserVariables)
 
-        val taskmanager = V1Container()
-            .image(taskmanagerConfig.image)
-            .imagePullPolicy(taskmanagerConfig.pullPolicy)
+        val taskmanagerContainer = V1Container()
+            .image(taskmanager.image)
+            .imagePullPolicy(taskmanager.pullPolicy)
             .name("flink-taskmanager")
             .args(
                 listOf("taskmanager")
@@ -406,22 +406,22 @@ object DefaultClusterResourcesFactory : ClusterResourcesFactory {
             .env(
                 taskmanagerVariables
             )
-            .resources(createResourceRequirements(taskmanagerConfig.resources))
+            .resources(createResourceRequirements(taskmanager.resources))
 
         val taskmanagerAffinity =
             createAffinity(jobmanagerSelector, taskmanagerSelector)
 
-        val taskmanagerPullSecrets = if (taskmanagerConfig.pullSecrets != null) {
+        val taskmanagerPullSecrets = if (taskmanager.pullSecrets != null) {
             listOf(
-                V1LocalObjectReference().name(taskmanagerConfig.pullSecrets)
+                V1LocalObjectReference().name(taskmanager.pullSecrets)
             )
         } else null
 
         val taskmanagerPodSpec = V1PodSpec()
             .containers(
-                listOf(taskmanager)
+                listOf(taskmanagerContainer)
             )
-            .serviceAccountName(taskmanagerConfig.serviceAccount)
+            .serviceAccountName(taskmanager.serviceAccount)
             .imagePullSecrets(taskmanagerPullSecrets)
             .affinity(taskmanagerAffinity)
 
@@ -429,13 +429,13 @@ object DefaultClusterResourcesFactory : ClusterResourcesFactory {
             createObjectMeta("flink-taskmanager-${descriptor.name}", taskmanagerLabels)
 
         val taskmanagerVolumeClaim =
-            createPersistentVolumeClaimSpec(taskmanagerConfig.storage)
+            createPersistentVolumeClaimSpec(taskmanager.storage)
 
         val taskmanagerStatefulSet = V1StatefulSet()
             .metadata(taskmanagerMetadata)
             .spec(
                 V1StatefulSetSpec()
-                    .replicas(taskmanagerConfig.replicas)
+                    .replicas(taskmanager.replicas)
                     .template(
                         V1PodTemplateSpec()
                             .spec(taskmanagerPodSpec)
@@ -489,13 +489,13 @@ object DefaultClusterResourcesFactory : ClusterResourcesFactory {
             )
         )
 
-    private fun createPersistentVolumeClaimSpec(storageConfig: StorageConfig): V1PersistentVolumeClaimSpec = V1PersistentVolumeClaimSpec()
+    private fun createPersistentVolumeClaimSpec(storage: Storage): V1PersistentVolumeClaimSpec = V1PersistentVolumeClaimSpec()
         .accessModes(listOf("ReadWriteOnce"))
-        .storageClassName(storageConfig.storageClass)
+        .storageClassName(storage.storageClass)
         .resources(
             V1ResourceRequirements()
                 .requests(
-                    mapOf("storage" to Quantity(storageConfig.size.toString()))
+                    mapOf("storage" to Quantity(storage.size.toString()))
                 )
         )
 
@@ -521,17 +521,17 @@ object DefaultClusterResourcesFactory : ClusterResourcesFactory {
         .name(name)
         .value(value)
 
-    private fun createResourceRequirements(resourcesConfig: ResourcesConfig): V1ResourceRequirements = V1ResourceRequirements()
+    private fun createResourceRequirements(resources: Resources): V1ResourceRequirements = V1ResourceRequirements()
         .limits(
             mapOf(
-                "cpu" to Quantity(resourcesConfig.cpus.toString()),
-                "memory" to Quantity(resourcesConfig.memory.times(1.5).toString() + "Mi")
+                "cpu" to Quantity(resources.cpus.toString()),
+                "memory" to Quantity(resources.memory.times(1.5).toString() + "Mi")
             )
         )
         .requests(
             mapOf(
-                "cpu" to Quantity(resourcesConfig.cpus.div(4).toString()),
-                "memory" to Quantity(resourcesConfig.memory.toString() + "Mi")
+                "cpu" to Quantity(resources.cpus.div(4).toString()),
+                "memory" to Quantity(resources.memory.toString() + "Mi")
             )
         )
 

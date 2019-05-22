@@ -1,7 +1,7 @@
 package com.nextbreakpoint.operator
 
 import com.nextbreakpoint.model.ClusterDescriptor
-import com.nextbreakpoint.operator.model.StorageConfig
+import com.nextbreakpoint.operator.model.Storage
 import com.nextbreakpoint.operator.model.*
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -53,7 +53,7 @@ class DefaultClusterResourcesFactoryTest {
         val param1 = "--key1=value1"
         val param2 = "--key2=value2"
 
-        val sidecarConfig = SidecarConfig(
+        val sidecarConfig = Sidecar(
             image = "sidecar:1.0",
             pullPolicy = "Always",
             serviceAccount = "testServiceAccount",
@@ -118,7 +118,7 @@ class DefaultClusterResourcesFactoryTest {
 
     @Test
     fun `should create sidecar deployment when watching job`() {
-        val sidecarConfig = SidecarConfig(
+        val sidecarConfig = Sidecar(
             image = "sidecar:1.0",
             pullPolicy = "Always",
             serviceAccount = "testServiceAccount",
@@ -178,18 +178,18 @@ class DefaultClusterResourcesFactoryTest {
 
     @Test
     fun `should create jobmanager statefulset`() {
-        val jobmanagerConfig = JobManagerConfig(
+        val jobmanagerConfig = JobManager(
             image = "flink:1.7.2",
             pullPolicy = "Always",
             pullSecrets = "somesecrets",
             serviceMode = "ClusterIP",
             serviceAccount = "testServiceAccount",
             environmentVariables = listOf(EnvironmentVariable("key", "value")),
-            storage = StorageConfig(
+            storage = Storage(
                 size = 100,
                 storageClass = "testStorageClass"
             ),
-            resources = ResourcesConfig(
+            resources = Resources(
                 cpus = 1.0f,
                 memory = 500
             )
@@ -260,7 +260,7 @@ class DefaultClusterResourcesFactoryTest {
 
     @Test
     fun `should create taskmanager statefulset`() {
-        val taskmanagerConfig = TaskManagerConfig(
+        val taskmanagerConfig = TaskManager(
             image = "flink:1.7.2",
             pullPolicy = "Always",
             pullSecrets = "somesecrets",
@@ -268,11 +268,11 @@ class DefaultClusterResourcesFactoryTest {
             taskSlots = 2,
             replicas = 4,
             environmentVariables = listOf(EnvironmentVariable("key", "value")),
-            storage = StorageConfig(
+            storage = Storage(
                 size = 100,
                 storageClass = "testStorageClass"
             ),
-            resources = ResourcesConfig(
+            resources = Resources(
                 cpus = 1.0f,
                 memory = 1000
             )

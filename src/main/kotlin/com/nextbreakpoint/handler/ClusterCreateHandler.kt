@@ -1,6 +1,6 @@
 package com.nextbreakpoint.handler
 
-import com.nextbreakpoint.operator.model.ClusterConfig
+import com.nextbreakpoint.operator.model.Cluster
 import com.nextbreakpoint.operator.ClusterResourcesBuilder
 import com.nextbreakpoint.operator.DefaultClusterResourcesFactory
 import io.kubernetes.client.apis.AppsV1Api
@@ -10,19 +10,19 @@ import org.apache.log4j.Logger
 object ClusterCreateHandler {
     private val logger = Logger.getLogger(ClusterCreateHandler::class.simpleName)
 
-    fun execute(owner: String, clusterConfig: ClusterConfig): String {
+    fun execute(owner: String, cluster: Cluster): String {
         try {
             val appsApi = AppsV1Api()
 
             val coreApi = CoreV1Api()
 
             val statefulSets = appsApi.listNamespacedStatefulSet(
-                clusterConfig.descriptor.namespace,
+                cluster.descriptor.namespace,
                 null,
                 null,
                 null,
                 null,
-                "cluster=${clusterConfig.descriptor.name},environment=${clusterConfig.descriptor.environment}",
+                "cluster=${cluster.descriptor.name},environment=${cluster.descriptor.environment}",
                 null,
                 null,
                 30,
@@ -36,13 +36,13 @@ object ClusterCreateHandler {
             val (jobmanagerService, sidecarDeployment, jobmanagerStatefulSet, taskmanagerStatefulSet) = ClusterResourcesBuilder(
                 DefaultClusterResourcesFactory,
                 owner,
-                clusterConfig
+                cluster
             ).build()
 
             logger.info("Creating Flink Service ...")
 
             val jobmanagerServiceOut = coreApi.createNamespacedService(
-                clusterConfig.descriptor.namespace,
+                cluster.descriptor.namespace,
                 jobmanagerService,
                 null,
                 null,
@@ -54,7 +54,7 @@ object ClusterCreateHandler {
             logger.info("Creating JobManager StatefulSet ...")
 
             val jobmanagerStatefulSetOut = appsApi.createNamespacedStatefulSet(
-                clusterConfig.descriptor.namespace,
+                cluster.descriptor.namespace,
                 jobmanagerStatefulSet,
                 null,
                 null,
@@ -66,7 +66,7 @@ object ClusterCreateHandler {
             logger.info("Creating Sidecar Deployment ...")
 
             val sidecarDeploymentOut = appsApi.createNamespacedDeployment(
-                clusterConfig.descriptor.namespace,
+                cluster.descriptor.namespace,
                 sidecarDeployment,
                 null,
                 null,
@@ -78,7 +78,7 @@ object ClusterCreateHandler {
             logger.info("Creating TaskManager StatefulSet ...")
 
             val taskmanagerStatefulSetOut = appsApi.createNamespacedStatefulSet(
-                clusterConfig.descriptor.namespace,
+                cluster.descriptor.namespace,
                 taskmanagerStatefulSet,
                 null,
                 null,

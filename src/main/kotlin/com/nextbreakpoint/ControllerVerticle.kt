@@ -4,7 +4,7 @@ import com.google.gson.Gson
 import com.nextbreakpoint.CommandUtils.createKubernetesClient
 import com.nextbreakpoint.handler.*
 import com.nextbreakpoint.model.*
-import com.nextbreakpoint.operator.model.ClusterConfig
+import com.nextbreakpoint.operator.model.Cluster
 import io.kubernetes.client.Configuration
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.handler.LoggerFormat
@@ -105,7 +105,7 @@ class ControllerVerticle : AbstractVerticle() {
 
         mainRouter.post("/cluster/create").handler { context ->
             execute(context) { future ->
-                future.complete(ClusterCreateHandler.execute("flink-controller", fromJson(context, ClusterConfig::class.java)))
+                future.complete(ClusterCreateHandler.execute("flink-controller", fromJson(context, Cluster::class.java)))
             }
         }
 

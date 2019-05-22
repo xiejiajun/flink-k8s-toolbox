@@ -4,30 +4,30 @@ import com.nextbreakpoint.model.ClusterDescriptor
 import com.nextbreakpoint.operator.model.*
 
 object TestFactory {
-    fun baseClusterConfig(): ClusterConfig {
-        return ClusterConfig(
+    fun baseClusterConfig(): Cluster {
+        return Cluster(
             descriptor = ClusterDescriptor(
                 namespace = "testNamespace",
                 name = "testCluster",
                 environment = "testEnvironment"
             ),
-            jobmanager = JobManagerConfig(
+            jobmanager = JobManager(
                 image = "flink:1.7.2",
                 pullPolicy = "Always",
                 pullSecrets = "somesecrets",
                 serviceMode = "ClusterIP",
                 serviceAccount = "testServiceAccount",
                 environmentVariables = listOf(EnvironmentVariable("key", "value")),
-                storage = StorageConfig(
+                storage = Storage(
                     size = 100,
                     storageClass = "testStorageClass"
                 ),
-                resources = ResourcesConfig(
+                resources = Resources(
                     cpus = 1.0f,
                     memory = 500
                 )
             ),
-            taskmanager = TaskManagerConfig(
+            taskmanager = TaskManager(
                 image = "flink:1.7.2",
                 pullPolicy = "Always",
                 pullSecrets = "somesecrets",
@@ -35,16 +35,16 @@ object TestFactory {
                 taskSlots = 1,
                 replicas = 2,
                 environmentVariables = listOf(EnvironmentVariable("key", "value")),
-                storage = StorageConfig(
+                storage = Storage(
                     size = 100,
                     storageClass = "testStorageClass"
                 ),
-                resources = ResourcesConfig(
+                resources = Resources(
                     cpus = 1.0f,
                     memory = 1000
                 )
             ),
-            sidecar = SidecarConfig(
+            sidecar = Sidecar(
                 image = "sidecar:1.0",
                 pullPolicy = "Always",
                 serviceAccount = "testServiceAccount",

@@ -9,7 +9,7 @@ import org.junit.platform.runner.JUnitPlatform
 import org.junit.runner.RunWith
 
 @RunWith(JUnitPlatform::class)
-class ClusterConfigBuilderTest {
+class ClusterBuilderTest {
     private val metadata = V1ObjectMeta()
         .name("testCluster")
         .namespace("testNamespace")

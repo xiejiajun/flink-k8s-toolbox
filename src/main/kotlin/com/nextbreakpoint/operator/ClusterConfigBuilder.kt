@@ -8,13 +8,13 @@ class ClusterConfigBuilder(
     private val metadata: V1ObjectMeta,
     private val spec: V1FlinkClusterSpec
 ) {
-    fun build() = ClusterConfig(
+    fun build() = Cluster(
         descriptor = ClusterDescriptor(
             namespace = metadata.namespace,
             name = metadata.name,
             environment = spec.environment ?: "test"
         ),
-        jobmanager = JobManagerConfig(
+        jobmanager = JobManager(
             image = spec.flinkImage,
             pullSecrets = spec.pullSecrets,
             pullPolicy = spec.pullPolicy ?: "Always",
@@ -26,16 +26,16 @@ class ClusterConfigBuilder(
                     it.value
                 )
             }?.toList() ?: listOf(),
-            resources = ResourcesConfig(
+            resources = Resources(
                 cpus = spec.jobmanagerCpus ?: 1f,
                 memory = spec.jobmanagerMemory ?: 512
             ),
-            storage = StorageConfig(
+            storage = Storage(
                 storageClass = spec.jobmanagerStorageClass ?: "standard",
                 size = spec.jobmanagerStorageSize ?: 2
             )
         ),
-        taskmanager = TaskManagerConfig(
+        taskmanager = TaskManager(
             image = spec.flinkImage,
             pullSecrets = spec.pullSecrets,
             pullPolicy = spec.pullPolicy ?: "Always",
@@ -48,16 +48,16 @@ class ClusterConfigBuilder(
             }?.toList() ?: listOf(),
             replicas = spec.taskmanagerReplicas ?: 1,
             taskSlots = spec.taskmanagerTaskSlots ?: 1,
-            resources = ResourcesConfig(
+            resources = Resources(
                 cpus = spec.taskmanagerCpus ?: 1f,
                 memory = spec.taskmanagerMemory ?: 1024
             ),
-            storage = StorageConfig(
+            storage = Storage(
                 storageClass = spec.taskmanagerStorageClass ?: "standard",
                 size = spec.taskmanagerStorageSize ?: 2
             )
         ),
-        sidecar = SidecarConfig(
+        sidecar = Sidecar(
             image = spec.sidecarImage,
             pullSecrets = spec.pullSecrets,
             pullPolicy = spec.pullPolicy ?: "Always",
