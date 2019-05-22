@@ -2,10 +2,10 @@ package com.nextbreakpoint.command
 
 import com.nextbreakpoint.CommandUtils.createWebClient
 import com.nextbreakpoint.model.ApiParams
-import com.nextbreakpoint.model.ClusterDescriptor
+import com.nextbreakpoint.model.Descriptor
 
 class PostJobManagerMetricsRequest {
-    fun run(apiParams: ApiParams, descriptor: ClusterDescriptor) {
+    fun run(apiParams: ApiParams, descriptor: Descriptor) {
         val client = createWebClient(host = apiParams.host, port = apiParams.port)
         try {
             val response = client.post("/jobmanager/metrics")

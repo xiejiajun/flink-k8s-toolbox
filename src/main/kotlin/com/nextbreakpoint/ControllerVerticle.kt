@@ -81,13 +81,13 @@ class ControllerVerticle : AbstractVerticle() {
 
         mainRouter.post("/jobmanager/metrics").handler { context ->
             execute(context) { future ->
-                future.complete(JobManagerMetricsHandler.execute(portForward, useNodePort, fromJson(context, ClusterDescriptor::class.java)))
+                future.complete(JobManagerMetricsHandler.execute(portForward, useNodePort, fromJson(context, Descriptor::class.java)))
             }
         }
 
         mainRouter.post("/taskmanagers/list").handler { context ->
             execute(context) { future ->
-                future.complete(TaskManagersListHandler.execute(portForward, useNodePort, fromJson(context, ClusterDescriptor::class.java)))
+                future.complete(TaskManagersListHandler.execute(portForward, useNodePort, fromJson(context, Descriptor::class.java)))
             }
         }
 
@@ -111,7 +111,7 @@ class ControllerVerticle : AbstractVerticle() {
 
         mainRouter.post("/cluster/delete").handler { context ->
             execute(context) { future ->
-                future.complete(ClusterDeleteHandler.execute("flink-operator", fromJson(context, ClusterDescriptor::class.java)))
+                future.complete(ClusterDeleteHandler.execute("flink-operator", fromJson(context, Descriptor::class.java)))
             }
         }
 

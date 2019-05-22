@@ -1,7 +1,7 @@
 package com.nextbreakpoint.model
 
 data class JobSubmitParams(
-    val descriptor: ClusterDescriptor,
+    val descriptor: Descriptor,
     val jarPath: String,
     val className: String?,
     val arguments: String?,

@@ -1,6 +1,6 @@
 package com.nextbreakpoint.operator
 
-import com.nextbreakpoint.model.ClusterDescriptor
+import com.nextbreakpoint.model.Descriptor
 import com.nextbreakpoint.operator.model.Storage
 import com.nextbreakpoint.operator.model.*
 import org.assertj.core.api.Assertions.assertThat
@@ -10,7 +10,7 @@ import org.junit.runner.RunWith
 
 @RunWith(JUnitPlatform::class)
 class DefaultClusterResourcesFactoryTest {
-    private val descriptor = ClusterDescriptor(
+    private val descriptor = Descriptor(
         name = "myCluster",
         namespace = "myNamespace",
         environment = "myEnvironment"

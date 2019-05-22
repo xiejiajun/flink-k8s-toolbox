@@ -4,7 +4,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.nextbreakpoint.CommandUtils
 import com.nextbreakpoint.flinkclient.api.FlinkApi
-import com.nextbreakpoint.model.ClusterDescriptor
+import com.nextbreakpoint.model.Descriptor
 import com.nextbreakpoint.model.JobManagerMetrics
 import com.nextbreakpoint.model.Metric
 import io.kubernetes.client.JSON
@@ -16,7 +16,7 @@ import java.util.List
 object JobManagerMetricsHandler {
     private val logger = Logger.getLogger(JobManagerMetricsHandler::class.simpleName)
 
-    fun execute(portForward: Int?, useNodePort: Boolean, descriptor: ClusterDescriptor): String {
+    fun execute(portForward: Int?, useNodePort: Boolean, descriptor: Descriptor): String {
         val coreApi = CoreV1Api()
 
         var jobmanagerHost = "localhost"

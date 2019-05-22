@@ -1,12 +1,12 @@
 package com.nextbreakpoint.operator
 
-import com.nextbreakpoint.model.ClusterDescriptor
+import com.nextbreakpoint.model.Descriptor
 import com.nextbreakpoint.operator.model.*
 
 object TestFactory {
     fun baseClusterConfig(): Cluster {
         return Cluster(
-            descriptor = ClusterDescriptor(
+            descriptor = Descriptor(
                 namespace = "testNamespace",
                 name = "testCluster",
                 environment = "testEnvironment"

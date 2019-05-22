@@ -2,14 +2,14 @@ package com.nextbreakpoint.handler
 
 import com.google.gson.Gson
 import com.nextbreakpoint.CommandUtils
-import com.nextbreakpoint.model.ClusterDescriptor
+import com.nextbreakpoint.model.Descriptor
 import io.kubernetes.client.apis.CoreV1Api
 import org.apache.log4j.Logger
 
 object TaskManagersListHandler {
     private val logger = Logger.getLogger(TaskManagersListHandler::class.simpleName)
 
-    fun execute(portForward: Int?, useNodePort: Boolean, descriptor: ClusterDescriptor): String {
+    fun execute(portForward: Int?, useNodePort: Boolean, descriptor: Descriptor): String {
         val coreApi = CoreV1Api()
 
         var jobmanagerHost = "localhost"

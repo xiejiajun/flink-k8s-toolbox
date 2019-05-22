@@ -1,6 +1,6 @@
 package com.nextbreakpoint.handler
 
-import com.nextbreakpoint.model.ClusterDescriptor
+import com.nextbreakpoint.model.Descriptor
 import com.nextbreakpoint.model.JobRunParams
 import io.kubernetes.client.apis.AppsV1Api
 import io.kubernetes.client.custom.Quantity
@@ -199,7 +199,7 @@ object JobRunHandler {
             )
         )
 
-    private fun deleteDeployment(api: AppsV1Api, descriptor: ClusterDescriptor) {
+    private fun deleteDeployment(api: AppsV1Api, descriptor: Descriptor) {
         val deployments = api.listNamespacedDeployment(
             descriptor.namespace,
             null,

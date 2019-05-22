@@ -1,6 +1,6 @@
 package com.nextbreakpoint.model
 
-data class ClusterDescriptor(
+data class Descriptor(
     val namespace: String,
     val name: String,
     val environment: String

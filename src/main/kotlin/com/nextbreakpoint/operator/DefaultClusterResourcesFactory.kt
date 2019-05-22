@@ -1,6 +1,6 @@
 package com.nextbreakpoint.operator
 
-import com.nextbreakpoint.model.ClusterDescriptor
+import com.nextbreakpoint.model.Descriptor
 import com.nextbreakpoint.operator.model.*
 import io.kubernetes.client.custom.IntOrString
 import io.kubernetes.client.custom.Quantity
@@ -9,7 +9,7 @@ import io.kubernetes.client.models.*
 object DefaultClusterResourcesFactory : ClusterResourcesFactory {
     override fun createJobManagerService(
         clusterOwner: String,
-        descriptor: ClusterDescriptor,
+        descriptor: Descriptor,
         serviceMode: String
     ): V1Service {
         val componentLabel = Pair("component", "flink")
@@ -51,7 +51,7 @@ object DefaultClusterResourcesFactory : ClusterResourcesFactory {
 
     override fun createSidecarDeployment(
         clusterOwner: String,
-        descriptor: ClusterDescriptor,
+        descriptor: Descriptor,
         sidecar: Sidecar
     ): V1Deployment {
         val componentLabel = Pair("component", "flink")
@@ -170,7 +170,7 @@ object DefaultClusterResourcesFactory : ClusterResourcesFactory {
 
     override fun createJobManagerStatefulSet(
         clusterOwner: String,
-        descriptor: ClusterDescriptor,
+        descriptor: Descriptor,
         jobmanager: JobManager
     ): V1StatefulSet {
         val componentLabel = Pair("component", "flink")
@@ -314,7 +314,7 @@ object DefaultClusterResourcesFactory : ClusterResourcesFactory {
 
     override fun createTaskManagerStatefulSet(
         clusterOwner: String,
-        descriptor: ClusterDescriptor,
+        descriptor: Descriptor,
         taskmanager: TaskManager
     ): V1StatefulSet {
         val componentLabel = Pair("component", "flink")

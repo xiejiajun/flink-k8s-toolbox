@@ -133,7 +133,7 @@ class FlinkK8SToolboxMain {
 
         override fun run() {
             val config = Cluster(
-                descriptor = ClusterDescriptor(
+                descriptor = Descriptor(
                     namespace = namespace,
                     name = clusterName,
                     environment = environment
@@ -201,7 +201,7 @@ class FlinkK8SToolboxMain {
         private val environment: String by option(help="The name of the environment").default("test")
 
         override fun run() {
-            val descriptor = ClusterDescriptor(
+            val descriptor = Descriptor(
                 namespace = namespace,
                 name = clusterName,
                 environment = environment
@@ -229,7 +229,7 @@ class FlinkK8SToolboxMain {
 
         override fun run() {
             val config = JobRunParams(
-                descriptor = ClusterDescriptor(
+                descriptor = Descriptor(
                     namespace = namespace,
                     name = clusterName,
                     environment = environment
@@ -261,7 +261,7 @@ class FlinkK8SToolboxMain {
 
         override fun run() {
             val config = JobsListParams(
-                descriptor = ClusterDescriptor(
+                descriptor = Descriptor(
                     namespace = namespace,
                     name = clusterName,
                     environment = environment
@@ -283,7 +283,7 @@ class FlinkK8SToolboxMain {
 
         override fun run() {
             val config = JobScaleParams(
-                descriptor = ClusterDescriptor(
+                descriptor = Descriptor(
                     namespace = namespace,
                     name = clusterName,
                     environment = environment
@@ -307,7 +307,7 @@ class FlinkK8SToolboxMain {
 
         override fun run() {
             val config = JobCancelParams(
-                descriptor = ClusterDescriptor(
+                descriptor = Descriptor(
                     namespace = namespace,
                     name = clusterName,
                     environment = environment
@@ -330,7 +330,7 @@ class FlinkK8SToolboxMain {
 
         override fun run() {
             val config = JobDescriptor(
-                descriptor = ClusterDescriptor(
+                descriptor = Descriptor(
                     namespace = namespace,
                     name = clusterName,
                     environment = environment
@@ -351,7 +351,7 @@ class FlinkK8SToolboxMain {
 
         override fun run() {
             val config = JobDescriptor(
-                descriptor = ClusterDescriptor(
+                descriptor = Descriptor(
                     namespace = namespace,
                     name = clusterName,
                     environment = environment
@@ -370,7 +370,7 @@ class FlinkK8SToolboxMain {
         private val environment: String by option(help="The name of the environment").default("test")
 
         override fun run() {
-            val descriptor = ClusterDescriptor(
+            val descriptor = Descriptor(
                 namespace = namespace,
                 name = clusterName,
                 environment = environment
@@ -389,7 +389,7 @@ class FlinkK8SToolboxMain {
 
         override fun run() {
             val config = TaskManagerDescriptor(
-                descriptor = ClusterDescriptor(
+                descriptor = Descriptor(
                     namespace = namespace,
                     name = clusterName,
                     environment = environment
@@ -410,7 +410,7 @@ class FlinkK8SToolboxMain {
 
         override fun run() {
             val config = TaskManagerDescriptor(
-                descriptor = ClusterDescriptor(
+                descriptor = Descriptor(
                     namespace = namespace,
                     name = clusterName,
                     environment = environment
@@ -429,7 +429,7 @@ class FlinkK8SToolboxMain {
         private val environment: String by option(help="The name of the environment").default("test")
 
         override fun run() {
-            val descriptor = ClusterDescriptor(
+            val descriptor = Descriptor(
                 namespace = namespace,
                 name = clusterName,
                 environment = environment
@@ -478,7 +478,7 @@ class FlinkK8SToolboxMain {
 
         override fun run() {
             val config = JobSubmitParams(
-                descriptor = ClusterDescriptor(
+                descriptor = Descriptor(
                     namespace = namespace,
                     name = clusterName,
                     environment = environment
@@ -503,7 +503,7 @@ class FlinkK8SToolboxMain {
 
         override fun run() {
             val config = WatchParams(
-                descriptor = ClusterDescriptor(
+                descriptor = Descriptor(
                     namespace = namespace,
                     name = clusterName,
                     environment = environment

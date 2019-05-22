@@ -1,6 +1,6 @@
 package com.nextbreakpoint.operator
 
-import com.nextbreakpoint.model.ClusterDescriptor
+import com.nextbreakpoint.model.Descriptor
 import com.nextbreakpoint.operator.model.ClusterStatus
 import com.nextbreakpoint.operator.model.ResourceStatus
 import com.nextbreakpoint.operator.model.Storage
@@ -792,7 +792,7 @@ class ClusterStatusEvaluatorTest {
 
     private fun createPersistentVolumeClaim(
         clusterOwner: String,
-        descriptor: ClusterDescriptor,
+        descriptor: Descriptor,
         storage: Storage,
         role: String
     ): V1PersistentVolumeClaim? {
@@ -810,7 +810,7 @@ class ClusterStatusEvaluatorTest {
     }
 
     private fun createLabels(
-        descriptor: ClusterDescriptor,
+        descriptor: Descriptor,
         clusterOwner: String,
         role: String
     ): Map<String, String> {

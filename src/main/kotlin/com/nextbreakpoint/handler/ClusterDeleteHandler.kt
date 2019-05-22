@@ -1,6 +1,6 @@
 package com.nextbreakpoint.handler
 
-import com.nextbreakpoint.model.ClusterDescriptor
+import com.nextbreakpoint.model.Descriptor
 import io.kubernetes.client.apis.AppsV1Api
 import io.kubernetes.client.apis.CoreV1Api
 import io.kubernetes.client.models.V1DeleteOptions
@@ -9,7 +9,7 @@ import org.apache.log4j.Logger
 object ClusterDeleteHandler {
     private val logger = Logger.getLogger(ClusterDeleteHandler::class.simpleName)
 
-    fun execute(owner: String, descriptor: ClusterDescriptor): String {
+    fun execute(owner: String, descriptor: Descriptor): String {
         try {
             val api = AppsV1Api()
 
@@ -33,7 +33,7 @@ object ClusterDeleteHandler {
         }
     }
 
-    private fun deleteDeployment(api: AppsV1Api, owner: String, descriptor: ClusterDescriptor) {
+    private fun deleteDeployment(api: AppsV1Api, owner: String, descriptor: Descriptor) {
         val deployments = api.listNamespacedDeployment(
             descriptor.namespace,
             null,
@@ -71,7 +71,7 @@ object ClusterDeleteHandler {
         }
     }
 
-    private fun deleteStatefulSets(api: AppsV1Api, owner: String, descriptor: ClusterDescriptor) {
+    private fun deleteStatefulSets(api: AppsV1Api, owner: String, descriptor: Descriptor) {
         val statefulSets = api.listNamespacedStatefulSet(
             descriptor.namespace,
             null,
@@ -109,7 +109,7 @@ object ClusterDeleteHandler {
         }
     }
 
-    private fun deleteService(coreApi: CoreV1Api, owner: String, descriptor: ClusterDescriptor) {
+    private fun deleteService(coreApi: CoreV1Api, owner: String, descriptor: Descriptor) {
         val services = coreApi.listNamespacedService(
             descriptor.namespace,
             null,
@@ -147,7 +147,7 @@ object ClusterDeleteHandler {
         }
     }
 
-    private fun deletePersistentVolumeClaims(coreApi: CoreV1Api, owner: String, descriptor: ClusterDescriptor) {
+    private fun deletePersistentVolumeClaims(coreApi: CoreV1Api, owner: String, descriptor: Descriptor) {
         val volumeClaims = coreApi.listNamespacedPersistentVolumeClaim(
             descriptor.namespace,
             null,

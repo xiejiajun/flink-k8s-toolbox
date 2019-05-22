@@ -1,7 +1,7 @@
 package com.nextbreakpoint.model
 
 data class JobsListParams(
-    val descriptor: ClusterDescriptor,
+    val descriptor: Descriptor,
     val savepoint: Boolean = false,
     val running: Boolean = false
 )

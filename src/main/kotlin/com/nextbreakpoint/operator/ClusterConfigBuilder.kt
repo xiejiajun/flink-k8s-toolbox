@@ -9,7 +9,7 @@ class ClusterConfigBuilder(
     private val spec: V1FlinkClusterSpec
 ) {
     fun build() = Cluster(
-        descriptor = ClusterDescriptor(
+        descriptor = Descriptor(
             namespace = metadata.namespace,
             name = metadata.name,
             environment = spec.environment ?: "test"

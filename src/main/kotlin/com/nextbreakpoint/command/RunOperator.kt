@@ -39,15 +39,15 @@ class RunOperator {
 
     private val operationQueue = LinkedBlockingQueue<() -> Unit>()
 
-    private val status = mutableMapOf<ClusterDescriptor, Long>()
+    private val status = mutableMapOf<Descriptor, Long>()
 
-    private val flinkClusters = mutableMapOf<ClusterDescriptor, V1FlinkCluster>()
-    private val jobmanagerServices = mutableMapOf<ClusterDescriptor, V1Service>()
-    private val sidecarDeployments = mutableMapOf<ClusterDescriptor, V1Deployment>()
-    private val jobmanagerStatefulSets = mutableMapOf<ClusterDescriptor, V1StatefulSet>()
-    private val taskmanagerStatefulSets = mutableMapOf<ClusterDescriptor, V1StatefulSet>()
-    private val jobmanagerPersistentVolumeClaims = mutableMapOf<ClusterDescriptor, V1PersistentVolumeClaim>()
-    private val taskmanagerPersistentVolumeClaims = mutableMapOf<ClusterDescriptor, V1PersistentVolumeClaim>()
+    private val flinkClusters = mutableMapOf<Descriptor, V1FlinkCluster>()
+    private val jobmanagerServices = mutableMapOf<Descriptor, V1Service>()
+    private val sidecarDeployments = mutableMapOf<Descriptor, V1Deployment>()
+    private val jobmanagerStatefulSets = mutableMapOf<Descriptor, V1StatefulSet>()
+    private val taskmanagerStatefulSets = mutableMapOf<Descriptor, V1StatefulSet>()
+    private val jobmanagerPersistentVolumeClaims = mutableMapOf<Descriptor, V1PersistentVolumeClaim>()
+    private val taskmanagerPersistentVolumeClaims = mutableMapOf<Descriptor, V1PersistentVolumeClaim>()
 
     fun run(config: OperatorConfig) {
         try {
@@ -88,7 +88,7 @@ class RunOperator {
             clusterConfig -> clusterConfig.descriptor to clusterConfig
         }.toMap()
 
-        val divergentClusters = mutableMapOf<ClusterDescriptor, Cluster>()
+        val divergentClusters = mutableMapOf<Descriptor, Cluster>()
 
         actualClusterConfigs.values.forEach { clusterConfig ->
             val jobmnagerService = jobmanagerServices.get(clusterConfig.descriptor)
@@ -199,8 +199,8 @@ class RunOperator {
         clusterStatus.taskmanagerPersistentVolumeClaim.second.forEach { println("taskmanager persistent volume claim: ${it}") }
     }
 
-    private fun convertToClusterConfigs(clusterResources: Map<ClusterDescriptor, V1FlinkCluster>) =
-        clusterResources.values.map { cluster ->
+    private fun convertToClusterConfigs(resources: Map<Descriptor, V1FlinkCluster>) =
+        resources.values.map { cluster ->
             ClusterConfigBuilder(
                 cluster.metadata,
                 cluster.spec
@@ -208,22 +208,22 @@ class RunOperator {
         }.toList()
 
     private fun deleteOrphans(
-        clusterConfigs: Map<ClusterDescriptor, Cluster>,
-        jobmanagerServices: MutableMap<ClusterDescriptor, V1Service>,
-        sidecarDeployments: MutableMap<ClusterDescriptor, V1Deployment>,
-        jobmanagerStatefulSets: MutableMap<ClusterDescriptor, V1StatefulSet>,
-        taskmanagerStatefulSets: MutableMap<ClusterDescriptor, V1StatefulSet>,
-        jobmanagerPersistentVolumeClaims: MutableMap<ClusterDescriptor, V1PersistentVolumeClaim>,
-        taskmanagerPersistentVolumeClaims: MutableMap<ClusterDescriptor, V1PersistentVolumeClaim>
+        configs: Map<Descriptor, Cluster>,
+        jobmanagerServices: MutableMap<Descriptor, V1Service>,
+        sidecarDeployments: MutableMap<Descriptor, V1Deployment>,
+        jobmanagerStatefulSets: MutableMap<Descriptor, V1StatefulSet>,
+        taskmanagerStatefulSets: MutableMap<Descriptor, V1StatefulSet>,
+        jobmanagerPersistentVolumeClaims: MutableMap<Descriptor, V1PersistentVolumeClaim>,
+        taskmanagerPersistentVolumeClaims: MutableMap<Descriptor, V1PersistentVolumeClaim>
     ) {
-        val pendingDeleteClusters = mutableSetOf<ClusterDescriptor>()
+        val pendingDeleteClusters = mutableSetOf<Descriptor>()
 
-        pendingDeleteClusters.addAll(jobmanagerServices.filter { (descriptor, _) -> clusterConfigs[descriptor] == null }.keys)
-        pendingDeleteClusters.addAll(sidecarDeployments.filter { (descriptor, _) -> clusterConfigs[descriptor] == null }.keys)
-        pendingDeleteClusters.addAll(jobmanagerStatefulSets.filter { (descriptor, _) -> clusterConfigs[descriptor] == null }.keys)
-        pendingDeleteClusters.addAll(taskmanagerStatefulSets.filter { (descriptor, _) -> clusterConfigs[descriptor] == null }.keys)
-        pendingDeleteClusters.addAll(jobmanagerPersistentVolumeClaims.filter { (descriptor, _) -> clusterConfigs[descriptor] == null }.keys)
-        pendingDeleteClusters.addAll(taskmanagerPersistentVolumeClaims.filter { (descriptor, _) -> clusterConfigs[descriptor] == null }.keys)
+        pendingDeleteClusters.addAll(jobmanagerServices.filter { (descriptor, _) -> configs[descriptor] == null }.keys)
+        pendingDeleteClusters.addAll(sidecarDeployments.filter { (descriptor, _) -> configs[descriptor] == null }.keys)
+        pendingDeleteClusters.addAll(jobmanagerStatefulSets.filter { (descriptor, _) -> configs[descriptor] == null }.keys)
+        pendingDeleteClusters.addAll(taskmanagerStatefulSets.filter { (descriptor, _) -> configs[descriptor] == null }.keys)
+        pendingDeleteClusters.addAll(jobmanagerPersistentVolumeClaims.filter { (descriptor, _) -> configs[descriptor] == null }.keys)
+        pendingDeleteClusters.addAll(taskmanagerPersistentVolumeClaims.filter { (descriptor, _) -> configs[descriptor] == null }.keys)
 
         pendingDeleteClusters.forEach {
             logger.info("Deleting orphan cluster ${it.name}...")
@@ -330,8 +330,8 @@ class RunOperator {
     private fun <T> watchResources(
         namespace: String,
         operationQueue: BlockingQueue<() -> Unit>,
-        onUpdateResource: (ClusterDescriptor, T) -> Unit,
-        onDeleteResource: (ClusterDescriptor, T) -> Unit,
+        onUpdateResource: (Descriptor, T) -> Unit,
+        onDeleteResource: (Descriptor, T) -> Unit,
         extractClusterName: (T) -> String?,
         extractEnvironment: (T) -> String?,
         createResourceWatch: (String) -> Watch<T>
@@ -344,14 +344,14 @@ class RunOperator {
                     if (clusterName != null && environment != null) {
                         when (resource.type) {
                             "ADDED", "MODIFIED" -> operationQueue.add { onUpdateResource(
-                                ClusterDescriptor(
+                                Descriptor(
                                     namespace = namespace,
                                     name = clusterName,
                                     environment = environment
                                 ), resource.`object`
                             ) }
                             "DELETED" -> operationQueue.add { onDeleteResource(
-                                ClusterDescriptor(
+                                Descriptor(
                                     namespace = namespace,
                                     name = clusterName,
                                     environment = environment
