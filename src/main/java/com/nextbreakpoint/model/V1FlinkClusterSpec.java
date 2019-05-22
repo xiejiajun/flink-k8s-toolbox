@@ -66,88 +66,99 @@ public class V1FlinkClusterSpec {
         return pullPolicy;
     }
 
-    public void setPullPolicy(String pullPolicy) {
+    public V1FlinkClusterSpec setPullPolicy(String pullPolicy) {
         this.pullPolicy = pullPolicy;
+        return this;
     }
 
     public String getServiceMode() {
         return serviceMode;
     }
 
-    public void setServiceMode(String serviceMode) {
+    public V1FlinkClusterSpec setServiceMode(String serviceMode) {
         this.serviceMode = serviceMode;
+        return this;
     }
 
     public Float getJobmanagerCpus() {
         return jobmanagerCpus;
     }
 
-    public void setJobmanagerCpus(Float jobmanagerCpus) {
+    public V1FlinkClusterSpec setJobmanagerCpus(Float jobmanagerCpus) {
         this.jobmanagerCpus = jobmanagerCpus;
+        return this;
     }
 
     public Integer getJobmanagerMemory() {
         return jobmanagerMemory;
     }
 
-    public void setJobmanagerMemory(Integer jobmanagerMemory) {
+    public V1FlinkClusterSpec setJobmanagerMemory(Integer jobmanagerMemory) {
         this.jobmanagerMemory = jobmanagerMemory;
+        return this;
     }
 
     public Integer getJobmanagerStorageSize() {
         return jobmanagerStorageSize;
     }
 
-    public void setJobmanagerStorageSize(Integer jobmanagerStorageSize) {
+    public V1FlinkClusterSpec setJobmanagerStorageSize(Integer jobmanagerStorageSize) {
         this.jobmanagerStorageSize = jobmanagerStorageSize;
+        return this;
     }
 
     public String getJobmanagerStorageClass() {
         return jobmanagerStorageClass;
     }
 
-    public void setJobmanagerStorageClass(String jobmanagerStorageClass) {
+    public V1FlinkClusterSpec setJobmanagerStorageClass(String jobmanagerStorageClass) {
         this.jobmanagerStorageClass = jobmanagerStorageClass;
+        return this;
     }
 
     public Float getTaskmanagerCpus() {
         return taskmanagerCpus;
     }
 
-    public void setTaskmanagerCpus(Float taskmanagerCpus) {
+    public V1FlinkClusterSpec setTaskmanagerCpus(Float taskmanagerCpus) {
         this.taskmanagerCpus = taskmanagerCpus;
+        return this;
     }
 
     public Integer getTaskmanagerMemory() {
         return taskmanagerMemory;
     }
 
-    public void setTaskmanagerMemory(Integer taskmanagerMemory) {
+    public V1FlinkClusterSpec setTaskmanagerMemory(Integer taskmanagerMemory) {
         this.taskmanagerMemory = taskmanagerMemory;
+        return this;
     }
 
     public Integer getTaskmanagerStorageSize() {
         return taskmanagerStorageSize;
     }
 
-    public void setTaskmanagerStorageSize(Integer taskmanagerStorageSize) {
+    public V1FlinkClusterSpec setTaskmanagerStorageSize(Integer taskmanagerStorageSize) {
         this.taskmanagerStorageSize = taskmanagerStorageSize;
+        return this;
     }
 
     public String getTaskmanagerStorageClass() {
         return taskmanagerStorageClass;
     }
 
-    public void setTaskmanagerStorageClass(String taskmanagerStorageClass) {
+    public V1FlinkClusterSpec setTaskmanagerStorageClass(String taskmanagerStorageClass) {
         this.taskmanagerStorageClass = taskmanagerStorageClass;
+        return this;
     }
 
     public Integer getTaskmanagerReplicas() {
         return taskmanagerReplicas;
     }
 
-    public void setTaskmanagerReplicas(Integer taskmanagerReplicas) {
+    public V1FlinkClusterSpec setTaskmanagerReplicas(Integer taskmanagerReplicas) {
         this.taskmanagerReplicas = taskmanagerReplicas;
+        return this;
     }
 
     public Integer getTaskmanagerTaskSlots() {
@@ -162,48 +173,54 @@ public class V1FlinkClusterSpec {
         return clusterName;
     }
 
-    public void setClusterName(String clusterName) {
+    public V1FlinkClusterSpec setClusterName(String clusterName) {
         this.clusterName = clusterName;
+        return this;
     }
 
     public String getEnvironment() {
         return environment;
     }
 
-    public void setEnvironment(String environment) {
+    public V1FlinkClusterSpec setEnvironment(String environment) {
         this.environment = environment;
+        return this;
     }
 
     public String getPullSecrets() {
         return pullSecrets;
     }
 
-    public void setPullSecrets(String pullSecrets) {
+    public V1FlinkClusterSpec setPullSecrets(String pullSecrets) {
         this.pullSecrets = pullSecrets;
+        return this;
     }
 
     public String getFlinkImage() {
         return flinkImage;
     }
 
-    public void setFlinkImage(String flinkImage) {
+    public V1FlinkClusterSpec setFlinkImage(String flinkImage) {
         this.flinkImage = flinkImage;
+        return this;
     }
 
     public String getSidecarImage() {
         return sidecarImage;
     }
 
-    public void setSidecarImage(String sidecarImage) {
+    public V1FlinkClusterSpec setSidecarImage(String sidecarImage) {
         this.sidecarImage = sidecarImage;
+        return this;
     }
 
     public List<String> getSidecarArguments() {
         return sidecarArguments;
     }
 
-    public void setSidecarArguments(List<String> sidecarArguments) {
+    public V1FlinkClusterSpec setSidecarArguments(List<String> sidecarArguments) {
         this.sidecarArguments = sidecarArguments;
+        return this;
     }
 
     public String getJobmanagerServiceAccount() {
