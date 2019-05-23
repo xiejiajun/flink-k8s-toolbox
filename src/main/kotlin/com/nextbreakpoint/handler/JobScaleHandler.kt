@@ -46,7 +46,7 @@ object JobScaleHandler {
                 null,
                 null,
                 null,
-                "cluster=${scaleParams.descriptor.name},environment=${scaleParams.descriptor.environment},role=jobmanager",
+                "cluster=${scaleParams.descriptor.name},role=jobmanager",
                 1,
                 null,
                 30,

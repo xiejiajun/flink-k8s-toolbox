@@ -48,7 +48,7 @@ object JobCancelHandler {
                 null,
                 null,
                 null,
-                "cluster=${cancelParams.descriptor.name},environment=${cancelParams.descriptor.environment},role=jobmanager",
+                "cluster=${cancelParams.descriptor.name},role=jobmanager",
                 1,
                 null,
                 30,

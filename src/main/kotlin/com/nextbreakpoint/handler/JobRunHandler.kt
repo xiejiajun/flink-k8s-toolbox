@@ -18,7 +18,7 @@ object JobRunHandler {
 
             val environmentEnvVar = createEnvVar(
                 "FLINK_ENVIRONMENT",
-                runParams.descriptor.environment
+                runParams.descriptor.namespace
             )
 
             val podNameEnvVar =
@@ -36,7 +36,6 @@ object JobRunHandler {
                     "sidecar",
                     "submit",
                     "--namespace=${runParams.descriptor.namespace}",
-                    "--environment=${runParams.descriptor.environment}",
                     "--cluster-name=${runParams.descriptor.name}",
                     "--jar-path=${runParams.sidecar.jarPath}",
                     "--parallelism=${runParams.sidecar.parallelism}"
@@ -58,14 +57,11 @@ object JobRunHandler {
                     "sidecar",
                     "watch",
                     "--namespace=${runParams.descriptor.namespace}",
-                    "--environment=${runParams.descriptor.environment}",
                     "--cluster-name=${runParams.descriptor.name}"
                 ))
             }
 
             val componentLabel = Pair("component", "flink")
-
-            val environmentLabel = Pair("environment", runParams.descriptor.environment)
 
             val clusterLabel = Pair("cluster", runParams.descriptor.name)
 
@@ -75,11 +71,11 @@ object JobRunHandler {
 
             val taskmanagerLabel = Pair("role", "taskmanager")
 
-            val jobmanagerLabels = mapOf(ownerLabel, clusterLabel, componentLabel, jobmanagerLabel, environmentLabel)
+            val jobmanagerLabels = mapOf(ownerLabel, clusterLabel, componentLabel, jobmanagerLabel)
 
-            val taskmanagerLabels = mapOf(ownerLabel, clusterLabel, componentLabel, taskmanagerLabel, environmentLabel)
+            val taskmanagerLabels = mapOf(ownerLabel, clusterLabel, componentLabel, taskmanagerLabel)
 
-            val sidecarLabels = mapOf(ownerLabel, clusterLabel, componentLabel, environmentLabel)
+            val sidecarLabels = mapOf(ownerLabel, clusterLabel, componentLabel)
 
             val jobmanagerSelector = V1LabelSelector().matchLabels(jobmanagerLabels)
 
@@ -206,7 +202,7 @@ object JobRunHandler {
             null,
             null,
             null,
-            "cluster=${descriptor.name},environment=${descriptor.environment}",
+            "cluster=${descriptor.name}",
             null,
             null,
             30,

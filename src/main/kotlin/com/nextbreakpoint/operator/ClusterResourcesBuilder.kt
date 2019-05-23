@@ -4,7 +4,7 @@ import com.nextbreakpoint.operator.model.Cluster
 import com.nextbreakpoint.operator.model.ClusterResources
 
 class ClusterResourcesBuilder(
-    private val factory: ClusterResourcesFactory = DefaultClusterResourcesFactory,
+    private val factory: ClusterResourcesFactory,
     private val clusterOwner: String,
     private val cluster: Cluster
 ) {

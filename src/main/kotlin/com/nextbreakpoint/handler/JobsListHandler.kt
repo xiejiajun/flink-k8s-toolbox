@@ -47,7 +47,7 @@ object JobsListHandler {
                 null,
                 null,
                 null,
-                "cluster=${listParams.descriptor.name},environment=${listParams.descriptor.environment},role=jobmanager",
+                "cluster=${listParams.descriptor.name},role=jobmanager",
                 1,
                 null,
                 30,

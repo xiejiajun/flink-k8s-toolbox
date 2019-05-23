@@ -8,5 +8,5 @@ data class JobManager(
     val resources: Resources,
     val serviceMode: String,
     val serviceAccount: String,
-    val environmentVariables: List<EnvironmentVariable>
+    val environment: List<EnvironmentVariable>
 )

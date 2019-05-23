@@ -22,7 +22,7 @@ object ClusterCreateHandler {
                 null,
                 null,
                 null,
-                "cluster=${cluster.descriptor.name},environment=${cluster.descriptor.environment}",
+                "cluster=${cluster.descriptor.name}",
                 null,
                 null,
                 30,

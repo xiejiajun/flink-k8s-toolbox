@@ -48,7 +48,7 @@ object TaskManagersListHandler {
                 null,
                 null,
                 null,
-                "cluster=${descriptor.name},environment=${descriptor.environment},role=jobmanager",
+                "cluster=${descriptor.name},role=jobmanager",
                 1,
                 null,
                 30,

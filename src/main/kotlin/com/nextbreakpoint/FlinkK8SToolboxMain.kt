@@ -103,7 +103,6 @@ class FlinkK8SToolboxMain {
         private val port: Int by option(help="The controller port").int().default(4444)
         private val clusterName: String by option(help="The name of the new Flink cluster").required()
         private val namespace: String by option(help="The namespace where to create the resources").default("default")
-        private val environment: String by option(help="The name of the environment").default("test")
         private val flinkImage: String by option(help="The image to use for JobManager and TaskManager").required()
         private val sidecarImage: String by option(help="The image to use for sidecar").required()
         private val sidecarClassName: String? by option(help="The class name of the job to run")
@@ -135,8 +134,7 @@ class FlinkK8SToolboxMain {
             val config = Cluster(
                 descriptor = Descriptor(
                     namespace = namespace,
-                    name = clusterName,
-                    environment = environment
+                    name = clusterName
                 ),
                 jobmanager = JobManager(
                     image = flinkImage,
@@ -144,7 +142,7 @@ class FlinkK8SToolboxMain {
                     pullSecrets = imagePullSecrets,
                     serviceMode = jobmanagerServiceMode,
                     serviceAccount = jobmanagerServiceAccount,
-                    environmentVariables = expandVariables(jobmanagerEnvVar),
+                    environment = expandVariables(jobmanagerEnvVar),
                     storage = Storage(
                         size = jobmanagerStorageSize,
                         storageClass = jobmanagerStorageClass
@@ -161,7 +159,7 @@ class FlinkK8SToolboxMain {
                     serviceAccount = taskmanagerServiceAccount,
                     taskSlots = taskmanagerTaskSlots,
                     replicas = taskmanagerReplicas,
-                    environmentVariables = expandVariables(taskmanagerEnvVar),
+                    environment = expandVariables(taskmanagerEnvVar),
                     storage = Storage(
                         size = taskmanagerStorageSize,
                         storageClass = taskmanagerStorageClass
@@ -198,13 +196,11 @@ class FlinkK8SToolboxMain {
         private val port: Int by option(help="The controller port").int().default(4444)
         private val namespace: String by option(help="The namespace where to create the resources").default("default")
         private val clusterName: String by option(help="The name of the Flink cluster").required()
-        private val environment: String by option(help="The name of the environment").default("test")
 
         override fun run() {
             val descriptor = Descriptor(
                 namespace = namespace,
-                name = clusterName,
-                environment = environment
+                name = clusterName
             )
             PostClusterDeleteRequest().run(ApiParams(host, port), descriptor)
         }
@@ -215,7 +211,6 @@ class FlinkK8SToolboxMain {
         private val port: Int by option(help="The controller port").int().default(4444)
         private val namespace: String by option(help="The namespace where to create the resources").default("default")
         private val clusterName: String by option(help="The name of the Flink cluster").required()
-        private val environment: String by option(help="The name of the environment").default("test")
         private val sidecarImage: String by option(help="The image to use for sidecar").required()
         private val sidecarClassName: String? by option(help="The class name of the job to run")
         private val sidecarJarPath: String by option(help="The path of the JAR to upload").required()
@@ -231,8 +226,7 @@ class FlinkK8SToolboxMain {
             val config = JobRunParams(
                 descriptor = Descriptor(
                     namespace = namespace,
-                    name = clusterName,
-                    environment = environment
+                    name = clusterName
                 ),
                 sidecar = Sidecar(
                     image = sidecarImage,
@@ -256,15 +250,13 @@ class FlinkK8SToolboxMain {
         private val port: Int by option(help="The controller port").int().default(4444)
         private val namespace: String by option(help="The namespace where to create the resources").default("default")
         private val clusterName: String by option(help="The name of the Flink cluster").required()
-        private val environment: String by option(help="The name of the environment").default("test")
         private val onlyRunning: Boolean by option(help="List only running jobs").flag(default = false)
 
         override fun run() {
             val config = JobsListParams(
                 descriptor = Descriptor(
                     namespace = namespace,
-                    name = clusterName,
-                    environment = environment
+                    name = clusterName
                 ),
                 running = onlyRunning
             )
@@ -277,7 +269,6 @@ class FlinkK8SToolboxMain {
         private val port: Int by option(help="The controller port").int().default(4444)
         private val namespace: String by option(help="The namespace where to create the resources").default("default")
         private val clusterName: String by option(help="The name of the Flink cluster").required()
-        private val environment: String by option(help="The name of the environment").default("test")
         private val jobId: String by option(help="The id of the job to cancel").prompt("Insert job id")
         private val parallelism: Int by option(help="The parallelism of the job").int().default(1)
 
@@ -285,8 +276,7 @@ class FlinkK8SToolboxMain {
             val config = JobScaleParams(
                 descriptor = Descriptor(
                     namespace = namespace,
-                    name = clusterName,
-                    environment = environment
+                    name = clusterName
                 ),
                 jobId = jobId,
                 parallelism = parallelism
@@ -300,7 +290,6 @@ class FlinkK8SToolboxMain {
         private val port: Int by option(help="The controller port").int().default(4444)
         private val namespace: String by option(help="The namespace where to create the resources").default("default")
         private val clusterName: String by option(help="The name of the Flink cluster").required()
-        private val environment: String by option(help="The name of the environment").default("test")
         private val createSavepoint: Boolean by option(help="Create savepoint before stopping the job").flag(default = false)
         private val savepointPath: String by option(help="Directory where to save savepoint").default("file:///var/tmp/savepoints")
         private val jobId: String by option(help="The id of the job to cancel").prompt("Insert job id")
@@ -309,8 +298,7 @@ class FlinkK8SToolboxMain {
             val config = JobCancelParams(
                 descriptor = Descriptor(
                     namespace = namespace,
-                    name = clusterName,
-                    environment = environment
+                    name = clusterName
                 ),
                 savepoint = createSavepoint,
                 savepointPath = savepointPath,
@@ -325,15 +313,13 @@ class FlinkK8SToolboxMain {
         private val port: Int by option(help="The controller port").int().default(4444)
         private val namespace: String by option(help="The namespace where to create the resources").default("default")
         private val clusterName: String by option(help="The name of the Flink cluster").required()
-        private val environment: String by option(help="The name of the environment").default("test")
         private val jobId: String by option(help="The id of the job").prompt("Insert job id")
 
         override fun run() {
             val config = JobDescriptor(
                 descriptor = Descriptor(
                     namespace = namespace,
-                    name = clusterName,
-                    environment = environment
+                    name = clusterName
                 ),
                 jobId = jobId
             )
@@ -346,15 +332,13 @@ class FlinkK8SToolboxMain {
         private val port: Int by option(help="The controller port").int().default(4444)
         private val namespace: String by option(help="The namespace where to create the resources").default("default")
         private val clusterName: String by option(help="The name of the Flink cluster").required()
-        private val environment: String by option(help="The name of the environment").default("test")
         private val jobId: String by option(help="The id of the job").prompt("Insert job id")
 
         override fun run() {
             val config = JobDescriptor(
                 descriptor = Descriptor(
                     namespace = namespace,
-                    name = clusterName,
-                    environment = environment
+                    name = clusterName
                 ),
                 jobId = jobId
             )
@@ -367,13 +351,11 @@ class FlinkK8SToolboxMain {
         private val port: Int by option(help="The controller port").int().default(4444)
         private val namespace: String by option(help="The namespace where to create the resources").default("default")
         private val clusterName: String by option(help="The name of the Flink cluster").required()
-        private val environment: String by option(help="The name of the environment").default("test")
 
         override fun run() {
             val descriptor = Descriptor(
                 namespace = namespace,
-                name = clusterName,
-                environment = environment
+                name = clusterName
             )
             PostJobManagerMetricsRequest().run(ApiParams(host, port), descriptor)
         }
@@ -384,15 +366,13 @@ class FlinkK8SToolboxMain {
         private val port: Int by option(help="The controller port").int().default(4444)
         private val namespace: String by option(help="The namespace where to create the resources").default("default")
         private val clusterName: String by option(help="The name of the Flink cluster").required()
-        private val environment: String by option(help="The name of the environment").default("test")
         private val taskmanagerId: String by option(help="The id of the TaskManager").prompt("Insert TaskManager id")
 
         override fun run() {
             val config = TaskManagerDescriptor(
                 descriptor = Descriptor(
                     namespace = namespace,
-                    name = clusterName,
-                    environment = environment
+                    name = clusterName
                 ),
                 taskmanagerId = taskmanagerId
             )
@@ -405,15 +385,13 @@ class FlinkK8SToolboxMain {
         private val port: Int by option(help="The controller port").int().default(4444)
         private val namespace: String by option(help="The namespace where to create the resources").default("default")
         private val clusterName: String by option(help="The name of the Flink cluster").required()
-        private val environment: String by option(help="The name of the environment").default("test")
         private val taskmanagerId: String by option(help="The id of the TaskManager").prompt("Insert TaskManager id")
 
         override fun run() {
             val config = TaskManagerDescriptor(
                 descriptor = Descriptor(
                     namespace = namespace,
-                    name = clusterName,
-                    environment = environment
+                    name = clusterName
                 ),
                 taskmanagerId = taskmanagerId
             )
@@ -426,13 +404,11 @@ class FlinkK8SToolboxMain {
         private val port: Int by option(help="The controller port").int().default(4444)
         private val namespace: String by option(help="The namespace where to create the resources").default("default")
         private val clusterName: String by option(help="The name of the Flink cluster").required()
-        private val environment: String by option(help="The name of the environment").default("test")
 
         override fun run() {
             val descriptor = Descriptor(
                 namespace = namespace,
-                name = clusterName,
-                environment = environment
+                name = clusterName
             )
             PostTaskManagersListRequest().run(ApiParams(host, port), descriptor)
         }
@@ -468,7 +444,6 @@ class FlinkK8SToolboxMain {
         private val kubeConfig: String? by option(help="The path of kuke config")
         private val namespace: String by option(help="The namespace where to create the resources").default("default")
         private val clusterName: String by option(help="The name of the Flink cluster").required()
-        private val environment: String by option(help="The name of the environment").default("test")
         private val className: String? by option(help="The name of the class to submit")
         private val jarPath: String by option(help="The path of the jar to submit").required()
         private val argument: List<String> by option(help="Pass a job's argument").multiple()
@@ -480,8 +455,7 @@ class FlinkK8SToolboxMain {
             val config = JobSubmitParams(
                 descriptor = Descriptor(
                     namespace = namespace,
-                    name = clusterName,
-                    environment = environment
+                    name = clusterName
                 ),
                 jarPath = jarPath,
                 className = className,
@@ -499,14 +473,12 @@ class FlinkK8SToolboxMain {
         private val kubeConfig: String? by option(help="The path of kuke config")
         private val namespace: String by option(help="The namespace where to create the resources").default("default")
         private val clusterName: String by option(help="The name of the Flink cluster").required()
-        private val environment: String by option(help="The name of the environment").default("test")
 
         override fun run() {
             val config = WatchParams(
                 descriptor = Descriptor(
                     namespace = namespace,
-                    name = clusterName,
-                    environment = environment
+                    name = clusterName
                 )
             )
             Configuration.setDefaultApiClient(CommandUtils.createKubernetesClient(kubeConfig))

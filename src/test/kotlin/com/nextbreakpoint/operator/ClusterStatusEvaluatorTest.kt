@@ -119,7 +119,7 @@ class ClusterStatusEvaluatorTest {
         printStatus(actualStatus)
 
         assertThat(actualStatus.jobmanagerService.first).isEqualTo(ResourceStatus.DIVERGENT)
-        assertThat(actualStatus.jobmanagerService.second).hasSize(4)
+        assertThat(actualStatus.jobmanagerService.second).hasSize(3)
     }
 
     @Test
@@ -157,7 +157,7 @@ class ClusterStatusEvaluatorTest {
         printStatus(actualStatus)
 
         assertThat(actualStatus.jobmanagerStatefulSet.first).isEqualTo(ResourceStatus.DIVERGENT)
-        assertThat(actualStatus.jobmanagerStatefulSet.second).hasSize(4)
+        assertThat(actualStatus.jobmanagerStatefulSet.second).hasSize(3)
     }
 
     @Test
@@ -353,7 +353,7 @@ class ClusterStatusEvaluatorTest {
         printStatus(actualStatus)
 
         assertThat(actualStatus.taskmanagerStatefulSet.first).isEqualTo(ResourceStatus.DIVERGENT)
-        assertThat(actualStatus.taskmanagerStatefulSet.second).hasSize(4)
+        assertThat(actualStatus.taskmanagerStatefulSet.second).hasSize(3)
     }
 
     @Test
@@ -563,7 +563,7 @@ class ClusterStatusEvaluatorTest {
         printStatus(actualStatus)
 
         assertThat(actualStatus.jobmanagerPersistentVolumeClaim.first).isEqualTo(ResourceStatus.DIVERGENT)
-        assertThat(actualStatus.jobmanagerPersistentVolumeClaim.second).hasSize(4)
+        assertThat(actualStatus.jobmanagerPersistentVolumeClaim.second).hasSize(3)
     }
 
     @Test
@@ -591,7 +591,7 @@ class ClusterStatusEvaluatorTest {
         printStatus(actualStatus)
 
         assertThat(actualStatus.taskmanagerPersistentVolumeClaim.first).isEqualTo(ResourceStatus.DIVERGENT)
-        assertThat(actualStatus.taskmanagerPersistentVolumeClaim.second).hasSize(4)
+        assertThat(actualStatus.taskmanagerPersistentVolumeClaim.second).hasSize(3)
     }
 
     @Test
@@ -633,7 +633,7 @@ class ClusterStatusEvaluatorTest {
         printStatus(actualStatus)
 
         assertThat(actualStatus.sidecarDeployment.first).isEqualTo(ResourceStatus.DIVERGENT)
-        assertThat(actualStatus.sidecarDeployment.second).hasSize(3)
+        assertThat(actualStatus.sidecarDeployment.second).hasSize(2)
     }
 
     @Test
@@ -773,7 +773,7 @@ class ClusterStatusEvaluatorTest {
         printStatus(actualStatus)
 
         assertThat(actualStatus.sidecarDeployment.first).isEqualTo(ResourceStatus.DIVERGENT)
-        assertThat(actualStatus.sidecarDeployment.second).hasSize(9)
+        assertThat(actualStatus.sidecarDeployment.second).hasSize(8)
     }
 
     @Test
@@ -787,7 +787,7 @@ class ClusterStatusEvaluatorTest {
         printStatus(actualStatus)
 
         assertThat(actualStatus.sidecarDeployment.first).isEqualTo(ResourceStatus.DIVERGENT)
-        assertThat(actualStatus.sidecarDeployment.second).hasSize(8)
+        assertThat(actualStatus.sidecarDeployment.second).hasSize(7)
     }
 
     private fun createPersistentVolumeClaim(
@@ -816,15 +816,13 @@ class ClusterStatusEvaluatorTest {
     ): Map<String, String> {
         val componentLabel = Pair("component", "flink")
 
-        val environmentLabel = Pair("environment", descriptor.environment)
-
         val clusterLabel = Pair("cluster", descriptor.name)
 
         val ownerLabel = Pair("owner", clusterOwner)
 
         val roleLabel = Pair("role", role)
 
-        return mapOf(ownerLabel, clusterLabel, componentLabel, roleLabel, environmentLabel)
+        return mapOf(ownerLabel, clusterLabel, componentLabel, roleLabel)
     }
 
     private fun createTestClusterResources(targetCluster: Cluster): ClusterResources {

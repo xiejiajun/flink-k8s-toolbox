@@ -55,7 +55,7 @@ object JobMetricsHandler {
                 null,
                 null,
                 null,
-                "cluster=${jobDescriptor.descriptor.name},environment=${jobDescriptor.descriptor.environment},role=jobmanager",
+                "cluster=${jobDescriptor.descriptor.name},role=jobmanager",
                 1,
                 null,
                 30,

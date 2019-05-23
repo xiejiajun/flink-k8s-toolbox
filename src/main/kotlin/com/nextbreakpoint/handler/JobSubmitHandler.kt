@@ -48,7 +48,7 @@ object JobSubmitHandler {
                 null,
                 null,
                 null,
-                "cluster=${submitParams.descriptor.name},environment=${submitParams.descriptor.environment},role=jobmanager",
+                "cluster=${submitParams.descriptor.name},role=jobmanager",
                 1,
                 null,
                 30,

@@ -8,8 +8,7 @@ object TestFactory {
         return Cluster(
             descriptor = Descriptor(
                 namespace = "testNamespace",
-                name = "testCluster",
-                environment = "testEnvironment"
+                name = "testCluster"
             ),
             jobmanager = JobManager(
                 image = "flink:1.7.2",
@@ -17,7 +16,7 @@ object TestFactory {
                 pullSecrets = "somesecrets",
                 serviceMode = "ClusterIP",
                 serviceAccount = "testServiceAccount",
-                environmentVariables = listOf(EnvironmentVariable("key", "value")),
+                environment = listOf(EnvironmentVariable("key", "value")),
                 storage = Storage(
                     size = 100,
                     storageClass = "testStorageClass"
@@ -34,7 +33,7 @@ object TestFactory {
                 serviceAccount = "testServiceAccount",
                 taskSlots = 1,
                 replicas = 2,
-                environmentVariables = listOf(EnvironmentVariable("key", "value")),
+                environment = listOf(EnvironmentVariable("key", "value")),
                 storage = Storage(
                     size = 100,
                     storageClass = "testStorageClass"

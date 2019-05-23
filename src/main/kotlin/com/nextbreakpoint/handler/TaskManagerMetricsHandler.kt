@@ -54,7 +54,7 @@ object TaskManagerMetricsHandler {
                 null,
                 null,
                 null,
-                "cluster=${taskManagerDescriptor.descriptor.name},environment=${taskManagerDescriptor.descriptor.environment},role=jobmanager",
+                "cluster=${taskManagerDescriptor.descriptor.name},role=jobmanager",
                 1,
                 null,
                 30,

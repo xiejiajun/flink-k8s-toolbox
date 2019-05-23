@@ -238,9 +238,7 @@ class RunOperator {
             }, { descriptor, _ ->
                 flinkClusters.remove(descriptor)
             }, {
-                it.spec.clusterName
-            }, {
-                it.spec.environment
+                it.metadata.name
             }) {
                 namespace -> ResourceWatchFactory.createWatchFlickClusterResources(objectApi, namespace)
             }
@@ -253,8 +251,6 @@ class RunOperator {
                 jobmanagerServices.remove(descriptor)
             }, {
                 it.metadata.labels.get("cluster")
-            }, {
-                it.metadata.labels.get("environment")
             }) {
                 namespace -> ResourceWatchFactory.createWatchServiceResources(coreApi, namespace)
             }
@@ -267,8 +263,6 @@ class RunOperator {
                 sidecarDeployments.remove(descriptor)
             }, {
                 it.metadata.labels.get("cluster")
-            }, {
-                it.metadata.labels.get("environment")
             }) {
                 namespace -> ResourceWatchFactory.createWatchDeploymentResources(appsApi, namespace)
             }
@@ -293,8 +287,6 @@ class RunOperator {
                 }
             }, {
                 it.metadata.labels.get("cluster")
-            }, {
-                it.metadata.labels.get("environment")
             }) {
                 namespace -> ResourceWatchFactory.createWatchStatefulSetResources(appsApi, namespace)
             }
@@ -319,8 +311,6 @@ class RunOperator {
                 }
             }, {
                 it.metadata.labels.get("cluster")
-            }, {
-                it.metadata.labels.get("environment")
             }) {
                 namespace -> ResourceWatchFactory.createWatchPermanentVolumeClaimResources(coreApi, namespace)
             }
@@ -333,28 +323,24 @@ class RunOperator {
         onUpdateResource: (Descriptor, T) -> Unit,
         onDeleteResource: (Descriptor, T) -> Unit,
         extractClusterName: (T) -> String?,
-        extractEnvironment: (T) -> String?,
         createResourceWatch: (String) -> Watch<T>
     ) {
         while (true) {
             try {
                 createResourceWatch(namespace).forEach { resource ->
                     val clusterName = extractClusterName(resource.`object`)
-                    val environment = extractEnvironment(resource.`object`)
-                    if (clusterName != null && environment != null) {
+                    if (clusterName != null) {
                         when (resource.type) {
                             "ADDED", "MODIFIED" -> operationQueue.add { onUpdateResource(
                                 Descriptor(
                                     namespace = namespace,
-                                    name = clusterName,
-                                    environment = environment
+                                    name = clusterName
                                 ), resource.`object`
                             ) }
                             "DELETED" -> operationQueue.add { onDeleteResource(
                                 Descriptor(
                                     namespace = namespace,
-                                    name = clusterName,
-                                    environment = environment
+                                    name = clusterName
                                 ), resource.`object`
                             ) }
                         }

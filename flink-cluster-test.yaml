@@ -3,8 +3,6 @@ kind: FlinkCluster
 metadata:
   name: test
 spec:
-  clusterName: test
-  environment: test
   pullSecrets: regcred
   pullPolicy: IfNotPresent
   flinkImage: nextbreakpoint/flink:1.7.2-1

@@ -9,5 +9,5 @@ data class TaskManager(
     val replicas: Int,
     val storage: Storage,
     val resources: Resources,
-    val environmentVariables: List<EnvironmentVariable>
+    val environment: List<EnvironmentVariable>
 )

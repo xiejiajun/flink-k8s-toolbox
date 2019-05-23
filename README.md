@@ -188,8 +188,6 @@ Create a resource file:
     metadata:
       name: test
     spec:
-      clusterName: test
-      environment: test
       pullSecrets: regcred
       pullPolicy: Always
       flinkImage: nextbreakpoint/flink:1.7.2-1
@@ -328,8 +326,7 @@ Execute the command:
     java -jar com.nextbreakpoint.flink-k8s-toolbox-1.0.1-alpha.jar \
         cluster \
         delete \
-        --cluster-name=my-flink-cluster \
-        --environment=test
+        --cluster-name=my-flink-cluster
 
 Show more options with the command:
 
@@ -343,7 +340,6 @@ Execute the command:
         job \
         run \
         --cluster-name=my-flink-cluster \
-        --environment=test \
         --image-pull-secrets=regcred \
         --sidecar-image=some-registry/flink-k8s-toolbox-with-jobs:1.0.0 \
         --sidecar-class-name=your-main-class \
@@ -361,7 +357,6 @@ Execute the command:
         job \
         run \
         --cluster-name=my-flink-cluster \
-        --environment=test \
         --image-pull-secrets=regcred \
         --sidecar-image=some-registry/flink-k8s-toolbox-with-jobs:1.0.0 \
         --sidecar-class-name=your-main-class \
@@ -377,7 +372,6 @@ Or execute the command:
         job \
         run \
         --cluster-name=my-flink-cluster \
-        --environment=test \
         --image-pull-secrets=regcred \
         --sidecar-image=some-registry/flink-k8s-toolbox-with-jobs:1.0.0 \
         --sidecar-class-name=your-main-class \
@@ -392,7 +386,6 @@ Execute the command:
         job \
         cancel \
         --cluster-name=my-flink-cluster \
-        --environment=test \
         --create-savepoint \
         --job-id=your-job-id
 
@@ -407,8 +400,7 @@ Execute the command:
     java -jar com.nextbreakpoint.flink-k8s-toolbox-1.0.1-alpha.jar \
         jobs \
         list \
-        --cluster-name=my-flink-cluster \
-        --environment=test
+        --cluster-name=my-flink-cluster 
 
 Show more options with the command:
 

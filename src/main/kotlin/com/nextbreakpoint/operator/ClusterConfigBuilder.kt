@@ -11,8 +11,7 @@ class ClusterConfigBuilder(
     fun build() = Cluster(
         descriptor = Descriptor(
             namespace = metadata.namespace,
-            name = metadata.name,
-            environment = spec.environment ?: "test"
+            name = metadata.name
         ),
         jobmanager = JobManager(
             image = spec.flinkImage,
@@ -20,14 +19,14 @@ class ClusterConfigBuilder(
             pullPolicy = spec.pullPolicy ?: "Always",
             serviceMode = spec.serviceMode ?: "NodePort",
             serviceAccount = spec.jobmanagerServiceAccount ?: "default",
-            environmentVariables = spec.jobmanagerEnvironmentVariables?.map {
+            environment = spec.jobmanagerEnvironment?.map {
                 EnvironmentVariable(
                     it.name,
                     it.value
                 )
             }?.toList() ?: listOf(),
             resources = Resources(
-                cpus = spec.jobmanagerCpus ?: 1f,
+                cpus = spec.jobmanagerCPUs ?: 1f,
                 memory = spec.jobmanagerMemory ?: 512
             ),
             storage = Storage(
@@ -40,7 +39,7 @@ class ClusterConfigBuilder(
             pullSecrets = spec.pullSecrets,
             pullPolicy = spec.pullPolicy ?: "Always",
             serviceAccount = spec.taskmanagerServiceAccount ?: "default",
-            environmentVariables = spec.taskmanagerEnvironmentVariables?.map {
+            environment = spec.taskmanagerEnvironment?.map {
                 EnvironmentVariable(
                     it.name,
                     it.value
@@ -49,7 +48,7 @@ class ClusterConfigBuilder(
             replicas = spec.taskmanagerReplicas ?: 1,
             taskSlots = spec.taskmanagerTaskSlots ?: 1,
             resources = Resources(
-                cpus = spec.taskmanagerCpus ?: 1f,
+                cpus = spec.taskmanagerCPUs ?: 1f,
                 memory = spec.taskmanagerMemory ?: 1024
             ),
             storage = Storage(

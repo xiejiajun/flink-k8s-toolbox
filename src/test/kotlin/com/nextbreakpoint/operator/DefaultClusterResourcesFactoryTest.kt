@@ -12,8 +12,7 @@ import org.junit.runner.RunWith
 class DefaultClusterResourcesFactoryTest {
     private val descriptor = Descriptor(
         name = "myCluster",
-        namespace = "myNamespace",
-        environment = "myEnvironment"
+        namespace = "myNamespace"
     )
 
     @Test
@@ -23,10 +22,9 @@ class DefaultClusterResourcesFactoryTest {
         assertThat(service.metadata?.name).isEqualTo("flink-jobmanager-myCluster")
 
         val labels = service.metadata?.labels
-        assertThat(labels).hasSize(5)
+        assertThat(labels).hasSize(4)
         assertThat(labels?.get("owner")).isEqualTo("myself")
         assertThat(labels?.get("cluster")).isEqualTo("myCluster")
-        assertThat(labels?.get("environment")).isEqualTo("myEnvironment")
         assertThat(labels?.get("component")).isEqualTo("flink")
         assertThat(labels?.get("role")).isEqualTo("jobmanager")
 
@@ -40,10 +38,9 @@ class DefaultClusterResourcesFactoryTest {
         assertThat(ports?.get(3)?.name).isEqualTo("query")
 
         val selector = service.spec?.selector
-        assertThat(selector).hasSize(5)
+        assertThat(selector).hasSize(4)
         assertThat(selector?.get("owner")).isNotNull()
         assertThat(selector?.get("cluster")).isNotNull()
-        assertThat(selector?.get("environment")).isNotNull()
         assertThat(selector?.get("component")).isNotNull()
         assertThat(selector?.get("role")).isNotNull()
     }
@@ -70,19 +67,17 @@ class DefaultClusterResourcesFactoryTest {
         assertThat(deployment.metadata?.name).isEqualTo("flink-sidecar-myCluster")
 
         val labels = deployment.metadata?.labels
-        assertThat(labels).hasSize(4)
+        assertThat(labels).hasSize(3)
         assertThat(labels?.get("owner")).isEqualTo("myself")
         assertThat(labels?.get("cluster")).isEqualTo("myCluster")
-        assertThat(labels?.get("environment")).isEqualTo("myEnvironment")
         assertThat(labels?.get("component")).isEqualTo("flink")
 
         assertThat(deployment.spec?.replicas).isEqualTo(1)
 
         val matchLabels = deployment.spec?.selector?.matchLabels
-        assertThat(matchLabels).hasSize(4)
+        assertThat(matchLabels).hasSize(3)
         assertThat(matchLabels?.get("owner")).isNotNull()
         assertThat(matchLabels?.get("cluster")).isNotNull()
-        assertThat(matchLabels?.get("environment")).isNotNull()
         assertThat(matchLabels?.get("component")).isNotNull()
 
         val podSpec = deployment.spec?.template?.spec
@@ -98,18 +93,17 @@ class DefaultClusterResourcesFactoryTest {
         val container = podSpec?.containers?.get(0)
         assertThat(container?.ports).isNull()
         assertThat(container?.imagePullPolicy).isEqualTo(sidecarConfig.pullPolicy)
-        assertThat(container?.args).hasSize(11)
+        assertThat(container?.args).hasSize(10)
         assertThat(container?.args?.get(0)).isEqualTo("sidecar")
         assertThat(container?.args?.get(1)).isEqualTo("submit")
         assertThat(container?.args?.get(2)).isEqualTo("--namespace=${descriptor.namespace}")
-        assertThat(container?.args?.get(3)).isEqualTo("--environment=${descriptor.environment}")
-        assertThat(container?.args?.get(4)).isEqualTo("--cluster-name=${descriptor.name}")
-        assertThat(container?.args?.get(5)).isEqualTo("--jar-path=${sidecarConfig.jarPath}")
-        assertThat(container?.args?.get(6)).isEqualTo("--parallelism=${sidecarConfig.parallelism}")
-        assertThat(container?.args?.get(7)).isEqualTo("--class-name=${sidecarConfig.className}")
-        assertThat(container?.args?.get(8)).isEqualTo("--savepoint=${sidecarConfig.savepoint}")
-        assertThat(container?.args?.get(9)).isEqualTo("--argument=$param1")
-        assertThat(container?.args?.get(10)).isEqualTo("--argument=$param2")
+        assertThat(container?.args?.get(3)).isEqualTo("--cluster-name=${descriptor.name}")
+        assertThat(container?.args?.get(4)).isEqualTo("--jar-path=${sidecarConfig.jarPath}")
+        assertThat(container?.args?.get(5)).isEqualTo("--parallelism=${sidecarConfig.parallelism}")
+        assertThat(container?.args?.get(6)).isEqualTo("--class-name=${sidecarConfig.className}")
+        assertThat(container?.args?.get(7)).isEqualTo("--savepoint=${sidecarConfig.savepoint}")
+        assertThat(container?.args?.get(8)).isEqualTo("--argument=$param1")
+        assertThat(container?.args?.get(9)).isEqualTo("--argument=$param2")
         assertThat(container?.env).hasSize(3)
         assertThat(container?.env?.get(0)?.name).isEqualTo("POD_NAME")
         assertThat(container?.env?.get(1)?.name).isEqualTo("POD_NAMESPACE")
@@ -135,19 +129,17 @@ class DefaultClusterResourcesFactoryTest {
         assertThat(deployment.metadata?.name).isEqualTo("flink-sidecar-myCluster")
 
         val labels = deployment.metadata?.labels
-        assertThat(labels).hasSize(4)
+        assertThat(labels).hasSize(3)
         assertThat(labels?.get("owner")).isEqualTo("myself")
         assertThat(labels?.get("cluster")).isEqualTo("myCluster")
-        assertThat(labels?.get("environment")).isEqualTo("myEnvironment")
         assertThat(labels?.get("component")).isEqualTo("flink")
 
         assertThat(deployment.spec?.replicas).isEqualTo(1)
 
         val matchLabels = deployment.spec?.selector?.matchLabels
-        assertThat(matchLabels).hasSize(4)
+        assertThat(matchLabels).hasSize(3)
         assertThat(matchLabels?.get("owner")).isNotNull()
         assertThat(matchLabels?.get("cluster")).isNotNull()
-        assertThat(matchLabels?.get("environment")).isNotNull()
         assertThat(matchLabels?.get("component")).isNotNull()
 
         val podSpec = deployment.spec?.template?.spec
@@ -164,12 +156,11 @@ class DefaultClusterResourcesFactoryTest {
         assertThat(container?.ports).isNull()
         assertThat(container?.image).isEqualTo(sidecarConfig.image)
         assertThat(container?.imagePullPolicy).isEqualTo(sidecarConfig.pullPolicy)
-        assertThat(container?.args).hasSize(5)
+        assertThat(container?.args).hasSize(4)
         assertThat(container?.args?.get(0)).isEqualTo("sidecar")
         assertThat(container?.args?.get(1)).isEqualTo("watch")
         assertThat(container?.args?.get(2)).isEqualTo("--namespace=${descriptor.namespace}")
-        assertThat(container?.args?.get(3)).isEqualTo("--environment=${descriptor.environment}")
-        assertThat(container?.args?.get(4)).isEqualTo("--cluster-name=${descriptor.name}")
+        assertThat(container?.args?.get(3)).isEqualTo("--cluster-name=${descriptor.name}")
         assertThat(container?.env).hasSize(3)
         assertThat(container?.env?.get(0)?.name).isEqualTo("POD_NAME")
         assertThat(container?.env?.get(1)?.name).isEqualTo("POD_NAMESPACE")
@@ -184,7 +175,7 @@ class DefaultClusterResourcesFactoryTest {
             pullSecrets = "somesecrets",
             serviceMode = "ClusterIP",
             serviceAccount = "testServiceAccount",
-            environmentVariables = listOf(EnvironmentVariable("key", "value")),
+            environment = listOf(EnvironmentVariable("key", "value")),
             storage = Storage(
                 size = 100,
                 storageClass = "testStorageClass"
@@ -200,10 +191,9 @@ class DefaultClusterResourcesFactoryTest {
         assertThat(statefulset.metadata?.name).isEqualTo("flink-jobmanager-myCluster")
 
         val labels = statefulset.metadata?.labels
-        assertThat(labels).hasSize(5)
+        assertThat(labels).hasSize(4)
         assertThat(labels?.get("owner")).isEqualTo("myself")
         assertThat(labels?.get("cluster")).isEqualTo("myCluster")
-        assertThat(labels?.get("environment")).isEqualTo("myEnvironment")
         assertThat(labels?.get("component")).isEqualTo("flink")
         assertThat(labels?.get("role")).isEqualTo("jobmanager")
 
@@ -213,10 +203,9 @@ class DefaultClusterResourcesFactoryTest {
         assertThat(statefulset.spec?.selector).isNotNull()
 
         val matchLabels = statefulset.spec?.selector?.matchLabels
-        assertThat(matchLabels).hasSize(5)
+        assertThat(matchLabels).hasSize(4)
         assertThat(matchLabels?.get("owner")).isNotNull()
         assertThat(matchLabels?.get("cluster")).isNotNull()
-        assertThat(matchLabels?.get("environment")).isNotNull()
         assertThat(matchLabels?.get("component")).isNotNull()
         assertThat(matchLabels?.get("role")).isNotNull()
 
@@ -267,7 +256,7 @@ class DefaultClusterResourcesFactoryTest {
             serviceAccount = "testServiceAccount",
             taskSlots = 2,
             replicas = 4,
-            environmentVariables = listOf(EnvironmentVariable("key", "value")),
+            environment = listOf(EnvironmentVariable("key", "value")),
             storage = Storage(
                 size = 100,
                 storageClass = "testStorageClass"
@@ -283,10 +272,9 @@ class DefaultClusterResourcesFactoryTest {
         assertThat(statefulset.metadata?.name).isEqualTo("flink-taskmanager-myCluster")
 
         val labels = statefulset.metadata?.labels
-        assertThat(labels).hasSize(5)
+        assertThat(labels).hasSize(4)
         assertThat(labels?.get("owner")).isEqualTo("myself")
         assertThat(labels?.get("cluster")).isEqualTo("myCluster")
-        assertThat(labels?.get("environment")).isEqualTo("myEnvironment")
         assertThat(labels?.get("component")).isEqualTo("flink")
         assertThat(labels?.get("role")).isEqualTo("taskmanager")
 
@@ -296,10 +284,9 @@ class DefaultClusterResourcesFactoryTest {
         assertThat(statefulset.spec?.selector).isNotNull()
 
         val matchLabels = statefulset.spec?.selector?.matchLabels
-        assertThat(matchLabels).hasSize(5)
+        assertThat(matchLabels).hasSize(4)
         assertThat(matchLabels?.get("owner")).isNotNull()
         assertThat(matchLabels?.get("cluster")).isNotNull()
-        assertThat(matchLabels?.get("environment")).isNotNull()
         assertThat(matchLabels?.get("component")).isNotNull()
         assertThat(matchLabels?.get("role")).isNotNull()
 

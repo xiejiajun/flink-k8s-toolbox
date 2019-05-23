@@ -14,15 +14,13 @@ object DefaultClusterResourcesFactory : ClusterResourcesFactory {
     ): V1Service {
         val componentLabel = Pair("component", "flink")
 
-        val environmentLabel = Pair("environment", descriptor.environment)
-
         val clusterLabel = Pair("cluster", descriptor.name)
 
         val ownerLabel = Pair("owner", clusterOwner)
 
         val jobmanagerLabel = Pair("role", "jobmanager")//TODO remove
 
-        val serviceLabels = mapOf(ownerLabel, clusterLabel, componentLabel, jobmanagerLabel, environmentLabel)
+        val serviceLabels = mapOf(ownerLabel, clusterLabel, componentLabel, jobmanagerLabel)
 
         val srvPort8081 = createServicePort(8081, "ui")
         val srvPort6123 = createServicePort(6123, "rpc")
@@ -56,13 +54,11 @@ object DefaultClusterResourcesFactory : ClusterResourcesFactory {
     ): V1Deployment {
         val componentLabel = Pair("component", "flink")
 
-        val environmentLabel = Pair("environment", descriptor.environment)
-
         val clusterLabel = Pair("cluster", descriptor.name)
 
         val ownerLabel = Pair("owner", clusterOwner)
 
-        val sidecarLabels = mapOf(ownerLabel, clusterLabel, componentLabel, environmentLabel)
+        val sidecarLabels = mapOf(ownerLabel, clusterLabel, componentLabel)
 
         val podNameEnvVar = createEnvVarFromField(
             "POD_NAME",
@@ -76,7 +72,7 @@ object DefaultClusterResourcesFactory : ClusterResourcesFactory {
 
         val environmentEnvVar = createEnvVar(
             "FLINK_ENVIRONMENT",
-            descriptor.environment
+            descriptor.namespace
         )
 
         val sidecarSelector = V1LabelSelector().matchLabels(sidecarLabels)
@@ -91,7 +87,6 @@ object DefaultClusterResourcesFactory : ClusterResourcesFactory {
                     "sidecar",
                     "submit",
                     "--namespace=${descriptor.namespace}",
-                    "--environment=${descriptor.environment}",
                     "--cluster-name=${descriptor.name}",
                     "--jar-path=${sidecar.jarPath}",
                     "--parallelism=${sidecar.parallelism}"
@@ -115,7 +110,6 @@ object DefaultClusterResourcesFactory : ClusterResourcesFactory {
                     "sidecar",
                     "watch",
                     "--namespace=${descriptor.namespace}",
-                    "--environment=${descriptor.environment}",
                     "--cluster-name=${descriptor.name}"
                 )
             )
@@ -175,8 +169,6 @@ object DefaultClusterResourcesFactory : ClusterResourcesFactory {
     ): V1StatefulSet {
         val componentLabel = Pair("component", "flink")
 
-        val environmentLabel = Pair("environment", descriptor.environment)
-
         val clusterLabel = Pair("cluster", descriptor.name)
 
         val ownerLabel = Pair("owner", clusterOwner)
@@ -185,9 +177,9 @@ object DefaultClusterResourcesFactory : ClusterResourcesFactory {
 
         val taskmanagerLabel = Pair("role", "taskmanager")
 
-        val jobmanagerLabels = mapOf(ownerLabel, clusterLabel, componentLabel, jobmanagerLabel, environmentLabel)
+        val jobmanagerLabels = mapOf(ownerLabel, clusterLabel, componentLabel, jobmanagerLabel)
 
-        val taskmanagerLabels = mapOf(ownerLabel, clusterLabel, componentLabel, taskmanagerLabel, environmentLabel)
+        val taskmanagerLabels = mapOf(ownerLabel, clusterLabel, componentLabel, taskmanagerLabel)
 
         val jobmanagerVolumeMount = createVolumeMount("jobmanager")
 
@@ -210,7 +202,7 @@ object DefaultClusterResourcesFactory : ClusterResourcesFactory {
 
         val environmentEnvVar = createEnvVar(
             "FLINK_ENVIRONMENT",
-            descriptor.environment
+            descriptor.namespace
         )
 
         val jobManagerHeapEnvVar = createEnvVar(
@@ -240,7 +232,7 @@ object DefaultClusterResourcesFactory : ClusterResourcesFactory {
             rpcAddressEnvVar
         )
 
-        val jobmanagerUserVariables = jobmanager.environmentVariables.map { createEnvVar(it.name, it.value) }.toList()
+        val jobmanagerUserVariables = jobmanager.environment.map { createEnvVar(it.name, it.value) }.toList()
 
         jobmanagerVariables.addAll(jobmanagerUserVariables)
 
@@ -319,8 +311,6 @@ object DefaultClusterResourcesFactory : ClusterResourcesFactory {
     ): V1StatefulSet {
         val componentLabel = Pair("component", "flink")
 
-        val environmentLabel = Pair("environment", descriptor.environment)
-
         val clusterLabel = Pair("cluster", descriptor.name)
 
         val ownerLabel = Pair("owner", clusterOwner)
@@ -329,9 +319,9 @@ object DefaultClusterResourcesFactory : ClusterResourcesFactory {
 
         val taskmanagerLabel = Pair("role", "taskmanager")
 
-        val jobmanagerLabels = mapOf(ownerLabel, clusterLabel, componentLabel, jobmanagerLabel, environmentLabel)
+        val jobmanagerLabels = mapOf(ownerLabel, clusterLabel, componentLabel, jobmanagerLabel)
 
-        val taskmanagerLabels = mapOf(ownerLabel, clusterLabel, componentLabel, taskmanagerLabel, environmentLabel)
+        val taskmanagerLabels = mapOf(ownerLabel, clusterLabel, componentLabel, taskmanagerLabel)
 
         val taskmanagerVolumeMount = createVolumeMount("taskmanager")
 
@@ -352,7 +342,7 @@ object DefaultClusterResourcesFactory : ClusterResourcesFactory {
 
         val environmentEnvVar = createEnvVar(
             "FLINK_ENVIRONMENT",
-            descriptor.environment
+            descriptor.namespace
         )
 
         val taskManagerHeapEnvVar = createEnvVar(
@@ -383,7 +373,7 @@ object DefaultClusterResourcesFactory : ClusterResourcesFactory {
             numberOfTaskSlotsEnvVar
         )
 
-        val taskmanagerUserVariables = taskmanager.environmentVariables.map { createEnvVar(it.name, it.value) }.toList()
+        val taskmanagerUserVariables = taskmanager.environment.map { createEnvVar(it.name, it.value) }.toList()
 
         taskmanagerVariables.addAll(taskmanagerUserVariables)
 
