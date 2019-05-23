@@ -6,5 +6,5 @@ data class JobSubmitParams(
     val className: String?,
     val arguments: String?,
     val savepoint: String?,
-    val parallelism: Int = 1
+    val parallelism: Int
 )
