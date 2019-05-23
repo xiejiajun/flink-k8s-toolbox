@@ -181,7 +181,7 @@ class FlinkK8SToolboxMain {
                     parallelism = sidecarParallelism
                 )
             )
-            PostClusterCreateRequest().run(ApiParams(host, port), config)
+            PostCommandClusterCreate().run(ApiParams(host, port), config)
         }
 
         private fun expandVariables(list: List<String>) =
@@ -202,7 +202,7 @@ class FlinkK8SToolboxMain {
                 namespace = namespace,
                 name = clusterName
             )
-            PostClusterDeleteRequest().run(ApiParams(host, port), descriptor)
+            PostCommandClusterDelete().run(ApiParams(host, port), descriptor)
         }
     }
 
@@ -240,7 +240,7 @@ class FlinkK8SToolboxMain {
                     parallelism = sidecarParallelism
                 )
             )
-            PostJobRunRequest().run(ApiParams(host, port), config)
+            PostCommandJobRun().run(ApiParams(host, port), config)
             System.exit(0)
         }
     }
@@ -260,7 +260,7 @@ class FlinkK8SToolboxMain {
                 ),
                 running = onlyRunning
             )
-            PostJobsListRequest().run(ApiParams(host, port), config)
+            PostCommandJobsList().run(ApiParams(host, port), config)
         }
     }
 
@@ -281,7 +281,7 @@ class FlinkK8SToolboxMain {
                 jobId = jobId,
                 parallelism = parallelism
             )
-            PostJobScaleRequest().run(ApiParams(host, port), config)
+            PostCommandJobScale().run(ApiParams(host, port), config)
         }
     }
 
@@ -304,7 +304,7 @@ class FlinkK8SToolboxMain {
                 savepointPath = savepointPath,
                 jobId = jobId
             )
-            PostJobCancelRequest().run(ApiParams(host, port), config)
+            PostCommandJobCancel().run(ApiParams(host, port), config)
         }
     }
 
@@ -323,7 +323,7 @@ class FlinkK8SToolboxMain {
                 ),
                 jobId = jobId
             )
-            PostJobDetailsRequest().run(ApiParams(host, port), config)
+            PostCommandJobDetails().run(ApiParams(host, port), config)
         }
     }
 
@@ -342,7 +342,7 @@ class FlinkK8SToolboxMain {
                 ),
                 jobId = jobId
             )
-            PostJobMetricsRequest().run(ApiParams(host, port), config)
+            PostCommandJobMetrics().run(ApiParams(host, port), config)
         }
     }
 
@@ -357,7 +357,7 @@ class FlinkK8SToolboxMain {
                 namespace = namespace,
                 name = clusterName
             )
-            PostJobManagerMetricsRequest().run(ApiParams(host, port), descriptor)
+            PostCommandJobManagerMetrics().run(ApiParams(host, port), descriptor)
         }
     }
 
@@ -376,7 +376,7 @@ class FlinkK8SToolboxMain {
                 ),
                 taskmanagerId = taskmanagerId
             )
-            PostTaskManagerDetailsRequest().run(ApiParams(host, port), config)
+            PostCommandTaskManagerDetails().run(ApiParams(host, port), config)
         }
     }
 
@@ -395,7 +395,7 @@ class FlinkK8SToolboxMain {
                 ),
                 taskmanagerId = taskmanagerId
             )
-            PostTaskManagerMetricsRequest().run(ApiParams(host, port), config)
+            PostCommandTaskManagerMetrics().run(ApiParams(host, port), config)
         }
     }
 
@@ -410,7 +410,7 @@ class FlinkK8SToolboxMain {
                 namespace = namespace,
                 name = clusterName
             )
-            PostTaskManagersListRequest().run(ApiParams(host, port), descriptor)
+            PostCommnadTaskManagersList().run(ApiParams(host, port), descriptor)
         }
     }
 
