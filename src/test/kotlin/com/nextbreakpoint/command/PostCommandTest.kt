@@ -1,5 +1,6 @@
 package com.nextbreakpoint.command
 
+import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.junit.WireMockRule
 import com.github.tomakehurst.wiremock.matching.EqualToJsonPattern
@@ -49,23 +50,23 @@ class PostCommandTest {
         )
     }
 
-    private var wireMockRule: WireMockRule? = null
+    private var wireMockServer: WireMockServer? = null
 
     @BeforeEach
     fun setup() {
-        wireMockRule = WireMockRule(8089)
-        wireMockRule?.start()
+        wireMockServer = WireMockServer(8089)
+        wireMockServer?.start()
+
+        configureFor("localhost", 8089)
     }
 
     @AfterEach
     fun teardown() {
-        wireMockRule?.stop()
+        wireMockServer?.stop()
     }
 
     @Test
     fun `should invoke api with given payload`() {
-        configureFor("localhost", 8089)
-
         stubFor(post(urlEqualTo("/test"))
             .willReturn(aResponse()
                 .withStatus(200)
@@ -91,8 +92,6 @@ class PostCommandTest {
 
     @Test
     fun `should invoke cluster create`() {
-        configureFor("localhost", 8089)
-
         configureStub("/cluster/create")
 
         PostCommandClusterCreate().run(ApiParams("localhost", 8089), CLUSTER)
@@ -103,8 +102,6 @@ class PostCommandTest {
 
     @Test
     fun `should invoke cluster delete`() {
-        configureFor("localhost", 8089)
-
         configureStub("/cluster/delete")
 
         PostCommandClusterDelete().run(ApiParams("localhost", 8089), CLUSTER.descriptor)
@@ -115,8 +112,6 @@ class PostCommandTest {
 
     @Test
     fun `should invoke job details`() {
-        configureFor("localhost", 8089)
-
         configureStub("/job/details")
 
         PostCommandJobDetails().run(ApiParams("localhost", 8089), JobDescriptor(CLUSTER.descriptor, "001"))
@@ -127,8 +122,6 @@ class PostCommandTest {
 
     @Test
     fun `should invoke job cancel`() {
-        configureFor("localhost", 8089)
-
         configureStub("/job/cancel")
 
         PostCommandJobCancel().run(ApiParams("localhost", 8089), JobCancelParams(JobDescriptor(CLUSTER.descriptor, "001"), "/tmp", true))
@@ -139,8 +132,6 @@ class PostCommandTest {
 
     @Test
     fun `should invoke job metrics`() {
-        configureFor("localhost", 8089)
-
         configureStub("/job/metrics")
 
         PostCommandJobMetrics().run(ApiParams("localhost", 8089), JobDescriptor(CLUSTER.descriptor, "001"))
@@ -151,8 +142,6 @@ class PostCommandTest {
 
     @Test
     fun `should invoke job scale`() {
-        configureFor("localhost", 8089)
-
         configureStub("/job/scale")
 
         PostCommandJobScale().run(ApiParams("localhost", 8089), JobScaleParams(JobDescriptor(CLUSTER.descriptor, "001"), 2))
@@ -163,8 +152,6 @@ class PostCommandTest {
 
     @Test
     fun `should invoke jobs list`() {
-        configureFor("localhost", 8089)
-
         configureStub("/jobs/list")
 
         PostCommandJobsList().run(ApiParams("localhost", 8089), JobsListParams(CLUSTER.descriptor, true))
@@ -175,8 +162,6 @@ class PostCommandTest {
 
     @Test
     fun `should invoke job run`() {
-        configureFor("localhost", 8089)
-
         configureStub("/job/run")
 
         PostCommandJobRun().run(ApiParams("localhost", 8089), JobRunParams(CLUSTER.descriptor, CLUSTER.sidecar))
@@ -187,8 +172,6 @@ class PostCommandTest {
 
     @Test
     fun `should invoke jobmanager metrics`() {
-        configureFor("localhost", 8089)
-
         configureStub("/jobmanager/metrics")
 
         PostCommandJobManagerMetrics().run(ApiParams("localhost", 8089), CLUSTER.descriptor)
@@ -199,8 +182,6 @@ class PostCommandTest {
 
     @Test
     fun `should invoke taskmanager metrics`() {
-        configureFor("localhost", 8089)
-
         configureStub("/taskmanager/metrics")
 
         PostCommandTaskManagerMetrics().run(ApiParams("localhost", 8089), TaskManagerDescriptor(CLUSTER.descriptor, "00002"))
@@ -211,8 +192,6 @@ class PostCommandTest {
 
     @Test
     fun `should invoke taskmanager details`() {
-        configureFor("localhost", 8089)
-
         configureStub("/taskmanager/details")
 
         PostCommandTaskManagerDetails().run(ApiParams("localhost", 8089), TaskManagerDescriptor(CLUSTER.descriptor, "00002"))
@@ -223,8 +202,6 @@ class PostCommandTest {
 
     @Test
     fun `should invoke taskmanagers list`() {
-        configureFor("localhost", 8089)
-
         configureStub("/taskmanagers/list")
 
         PostCommandTaskManagersList().run(ApiParams("localhost", 8089), CLUSTER.descriptor)
