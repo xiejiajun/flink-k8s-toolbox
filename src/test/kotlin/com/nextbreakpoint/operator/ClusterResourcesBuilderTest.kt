@@ -20,7 +20,7 @@ class ClusterResourcesBuilderTest {
     private val jobmanagerStatefulSet = mock(V1StatefulSet::class.java)
     private val taskmanagerStatefulSet = mock(V1StatefulSet::class.java)
 
-    private val clusterConfig = TestFactory.baseClusterConfig()
+    private val clusterConfig = TestFactory.aCluster()
 
     private val builder = ClusterResourcesBuilder(factory, "myself", clusterConfig)
 

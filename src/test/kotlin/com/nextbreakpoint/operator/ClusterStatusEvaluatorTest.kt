@@ -16,7 +16,7 @@ import org.junit.runner.RunWith
 class ClusterStatusEvaluatorTest {
     private val statusEvaluator = ClusterStatusEvaluator()
 
-    private val baseClusterConfig = TestFactory.baseClusterConfig()
+    private val baseClusterConfig = TestFactory.aCluster()
 
     @Test
     fun `should return all valid resources when creating resources from base configuration`() {

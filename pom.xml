@@ -53,6 +53,7 @@
         <junit5platform.version>1.4.2</junit5platform.version>
         <assertj.version>3.9.0</assertj.version>
         <mockito.version>2.27.0</mockito.version>
+        <wiremock.version>2.23.2</wiremock.version>
         <awaitility.version>3.1.6</awaitility.version>
         <maven-jar-plugin.version>3.1.0</maven-jar-plugin.version>
         <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
@@ -230,6 +231,12 @@
             <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.github.tomakehurst</groupId>
+            <artifactId>wiremock</artifactId>
+            <version>${wiremock.version}</version>
+            <scope>test</scope>
+        </dependency>
 <!--        <dependency>-->
 <!--            <groupId>org.mockito</groupId>-->
 <!--            <artifactId>mockito-inline</artifactId>-->
@@ -297,6 +304,9 @@
                         <goals>
                             <goal>compile</goal>
                         </goals>
+                        <configuration>
+                            <jvmTarget>1.8</jvmTarget>
+                        </configuration>
                     </execution>
                     <execution>
                         <id>test-compile</id>
@@ -304,6 +314,9 @@
                         <goals>
                             <goal>test-compile</goal>
                         </goals>
+                        <configuration>
+                            <jvmTarget>1.8</jvmTarget>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

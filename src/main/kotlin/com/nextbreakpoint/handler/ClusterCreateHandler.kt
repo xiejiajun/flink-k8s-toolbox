@@ -63,18 +63,6 @@ object ClusterCreateHandler {
 
             logger.info("StatefulSet created ${jobmanagerStatefulSetOut.metadata.name}")
 
-            logger.info("Creating Sidecar Deployment ...")
-
-            val sidecarDeploymentOut = appsApi.createNamespacedDeployment(
-                cluster.descriptor.namespace,
-                sidecarDeployment,
-                null,
-                null,
-                null
-            )
-
-            logger.info("Deployment created ${sidecarDeploymentOut.metadata.name}")
-
             logger.info("Creating TaskManager StatefulSet ...")
 
             val taskmanagerStatefulSetOut = appsApi.createNamespacedStatefulSet(
@@ -86,6 +74,18 @@ object ClusterCreateHandler {
             )
 
             logger.info("StatefulSet created ${taskmanagerStatefulSetOut.metadata.name}")
+
+            logger.info("Creating Sidecar Deployment ...")
+
+            val sidecarDeploymentOut = appsApi.createNamespacedDeployment(
+                cluster.descriptor.namespace,
+                sidecarDeployment,
+                null,
+                null,
+                null
+            )
+
+            logger.info("Deployment created ${sidecarDeploymentOut.metadata.name}")
 
             return "{\"status\":\"SUCCESS\"}"
         } catch (e : Exception) {

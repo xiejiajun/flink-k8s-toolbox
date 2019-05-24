@@ -43,12 +43,12 @@ object JobCancelHandler {
 
         if (portForward == null) {
             val services = coreApi.listNamespacedService(
-                cancelParams.descriptor.namespace,
+                cancelParams.jobDescriptor.descriptor.namespace,
                 null,
                 null,
                 null,
                 null,
-                "cluster=${cancelParams.descriptor.name},role=jobmanager",
+                "cluster=${cancelParams.jobDescriptor.descriptor.name},role=jobmanager",
                 1,
                 null,
                 30,
@@ -93,7 +93,7 @@ object JobCancelHandler {
             logger.info("Cancelling job with savepoint...")
 
             val operation =
-                flinkApi.createJobSavepoint(savepointTriggerRequestBody(true, cancelParams.savepointPath), cancelParams.jobId)
+                flinkApi.createJobSavepoint(savepointTriggerRequestBody(true, cancelParams.savepointPath), cancelParams.jobDescriptor.jobId)
 
 //            while (true) {
 //                val operationStatus =
@@ -123,7 +123,7 @@ object JobCancelHandler {
 //                Thread.sleep(5000)
 //            }
 
-            flinkApi.terminateJob(cancelParams.jobId, "stop")
+            flinkApi.terminateJob(cancelParams.jobDescriptor.jobId, "stop")
 
             logger.info("done")
 

@@ -274,11 +274,13 @@ class FlinkK8SToolboxMain {
 
         override fun run() {
             val config = JobScaleParams(
-                descriptor = Descriptor(
-                    namespace = namespace,
-                    name = clusterName
+                jobDescriptor = JobDescriptor(
+                    descriptor = Descriptor(
+                        namespace = namespace,
+                        name = clusterName
+                    ),
+                    jobId = jobId
                 ),
-                jobId = jobId,
                 parallelism = parallelism
             )
             PostCommandJobScale().run(ApiParams(host, port), config)
@@ -296,13 +298,15 @@ class FlinkK8SToolboxMain {
 
         override fun run() {
             val config = JobCancelParams(
-                descriptor = Descriptor(
-                    namespace = namespace,
-                    name = clusterName
+                jobDescriptor = JobDescriptor(
+                    descriptor = Descriptor(
+                        namespace = namespace,
+                        name = clusterName
+                    ),
+                    jobId = jobId
                 ),
                 savepoint = createSavepoint,
-                savepointPath = savepointPath,
-                jobId = jobId
+                savepointPath = savepointPath
             )
             PostCommandJobCancel().run(ApiParams(host, port), config)
         }
@@ -410,7 +414,7 @@ class FlinkK8SToolboxMain {
                 namespace = namespace,
                 name = clusterName
             )
-            PostCommnadTaskManagersList().run(ApiParams(host, port), descriptor)
+            PostCommandTaskManagersList().run(ApiParams(host, port), descriptor)
         }
     }
 

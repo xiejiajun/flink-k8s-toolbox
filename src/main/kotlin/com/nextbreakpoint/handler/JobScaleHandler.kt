@@ -41,12 +41,12 @@ object JobScaleHandler {
 
         if (portForward == null) {
             val services = coreApi.listNamespacedService(
-                scaleParams.descriptor.namespace,
+                scaleParams.jobDescriptor.descriptor.namespace,
                 null,
                 null,
                 null,
                 null,
-                "cluster=${scaleParams.descriptor.name},role=jobmanager",
+                "cluster=${scaleParams.jobDescriptor.descriptor.name},role=jobmanager",
                 1,
                 null,
                 30,
@@ -89,7 +89,7 @@ object JobScaleHandler {
 
         logger.info("Rescaling job...")
 
-        val operation = flinkApi.triggerJobRescaling(scaleParams.jobId, scaleParams.parallelism)
+        val operation = flinkApi.triggerJobRescaling(scaleParams.jobDescriptor.jobId, scaleParams.parallelism)
 
         logger.info("done")
 

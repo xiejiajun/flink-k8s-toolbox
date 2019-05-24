@@ -41,7 +41,7 @@ class ClusterConfigBuilderTest {
         .setSidecarArguments(listOf("--key=value"))
         .setSidecarParallelism(1)
 
-    private val expectedConfig = TestFactory.baseClusterConfig()
+    private val expectedConfig = TestFactory.aCluster()
 
     @Test
     fun `should create config`() {

@@ -4,7 +4,7 @@ import com.nextbreakpoint.model.Descriptor
 import com.nextbreakpoint.operator.model.*
 
 object TestFactory {
-    fun baseClusterConfig(): Cluster {
+    fun aCluster(): Cluster {
         return Cluster(
             descriptor = Descriptor(
                 namespace = "testNamespace",

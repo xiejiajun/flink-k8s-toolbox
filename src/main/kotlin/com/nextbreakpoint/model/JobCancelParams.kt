@@ -1,8 +1,7 @@
 package com.nextbreakpoint.model
 
 data class JobCancelParams(
-    val descriptor: Descriptor,
+    val jobDescriptor: JobDescriptor,
     val savepointPath: String,
-    val savepoint: Boolean,
-    val jobId: String
+    val savepoint: Boolean
 )
