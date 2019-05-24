@@ -2,11 +2,11 @@ package com.nextbreakpoint.handler
 
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.nextbreakpoint.CommandUtils
+import com.nextbreakpoint.common.CommandUtils
 import com.nextbreakpoint.flinkclient.api.FlinkApi
-import com.nextbreakpoint.model.JobMetrics
-import com.nextbreakpoint.model.JobDescriptor
-import com.nextbreakpoint.model.Metric
+import com.nextbreakpoint.handler.model.JobMetrics
+import com.nextbreakpoint.handler.model.JobDescriptor
+import com.nextbreakpoint.common.model.Metric
 import io.kubernetes.client.JSON
 import io.kubernetes.client.apis.CoreV1Api
 import org.apache.log4j.Logger

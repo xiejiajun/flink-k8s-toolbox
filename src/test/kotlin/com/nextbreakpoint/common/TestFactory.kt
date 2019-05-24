@@ -1,6 +1,6 @@
-package com.nextbreakpoint.operator
+package com.nextbreakpoint.common
 
-import com.nextbreakpoint.model.Descriptor
+import com.nextbreakpoint.common.model.Descriptor
 import com.nextbreakpoint.operator.model.*
 
 object TestFactory {

@@ -1,5 +1,6 @@
 package com.nextbreakpoint.operator
 
+import com.nextbreakpoint.common.TestFactory
 import io.kubernetes.client.models.V1Deployment
 import io.kubernetes.client.models.V1Service
 import io.kubernetes.client.models.V1StatefulSet

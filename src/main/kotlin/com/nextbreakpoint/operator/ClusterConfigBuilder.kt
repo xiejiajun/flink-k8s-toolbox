@@ -1,5 +1,6 @@
 package com.nextbreakpoint.operator
 
+import com.nextbreakpoint.common.model.Descriptor
 import com.nextbreakpoint.model.*
 import com.nextbreakpoint.operator.model.*
 import io.kubernetes.client.models.V1ObjectMeta

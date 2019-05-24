@@ -1,8 +1,8 @@
 package com.nextbreakpoint.command
 
 import com.google.gson.Gson
-import com.nextbreakpoint.CommandUtils
-import com.nextbreakpoint.model.JobSubmitParams
+import com.nextbreakpoint.common.CommandUtils
+import com.nextbreakpoint.handler.model.JobSubmitParams
 import io.kubernetes.client.apis.CoreV1Api
 import org.apache.log4j.Logger
 import java.io.File

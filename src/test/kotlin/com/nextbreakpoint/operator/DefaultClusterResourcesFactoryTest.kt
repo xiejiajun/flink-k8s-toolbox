@@ -1,6 +1,6 @@
 package com.nextbreakpoint.operator
 
-import com.nextbreakpoint.model.Descriptor
+import com.nextbreakpoint.common.model.Descriptor
 import com.nextbreakpoint.operator.model.Storage
 import com.nextbreakpoint.operator.model.*
 import org.assertj.core.api.Assertions.assertThat

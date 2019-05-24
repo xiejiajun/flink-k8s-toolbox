@@ -1,4 +1,4 @@
-package com.nextbreakpoint
+package com.nextbreakpoint.common
 
 import com.google.common.io.ByteStreams.copy
 import com.nextbreakpoint.flinkclient.api.FlinkApi

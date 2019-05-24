@@ -1,6 +1,6 @@
 package com.nextbreakpoint.handler
 
-import com.nextbreakpoint.model.Descriptor
+import com.nextbreakpoint.common.model.Descriptor
 import io.kubernetes.client.apis.AppsV1Api
 import io.kubernetes.client.apis.CoreV1Api
 import io.kubernetes.client.models.V1DeleteOptions

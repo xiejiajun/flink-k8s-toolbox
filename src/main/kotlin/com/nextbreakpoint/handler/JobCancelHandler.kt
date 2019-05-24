@@ -1,9 +1,8 @@
 package com.nextbreakpoint.handler
 
-import com.nextbreakpoint.CommandUtils
-import com.nextbreakpoint.flinkclient.model.QueueStatus
+import com.nextbreakpoint.common.CommandUtils
 import com.nextbreakpoint.flinkclient.model.SavepointTriggerRequestBody
-import com.nextbreakpoint.model.JobCancelParams
+import com.nextbreakpoint.handler.model.JobCancelParams
 import io.kubernetes.client.apis.CoreV1Api
 import org.apache.log4j.Logger
 

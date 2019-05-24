@@ -6,7 +6,9 @@ import com.github.ajalt.clikt.parameters.options.*
 import com.github.ajalt.clikt.parameters.types.float
 import com.github.ajalt.clikt.parameters.types.int
 import com.nextbreakpoint.command.*
-import com.nextbreakpoint.model.*
+import com.nextbreakpoint.common.CommandUtils
+import com.nextbreakpoint.common.model.*
+import com.nextbreakpoint.handler.model.*
 import com.nextbreakpoint.operator.model.*
 import io.kubernetes.client.Configuration
 

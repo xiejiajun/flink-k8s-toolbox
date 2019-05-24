@@ -1,5 +1,7 @@
 package com.nextbreakpoint.command
 
+import com.nextbreakpoint.common.model.Descriptor
+import com.nextbreakpoint.handler.model.OperatorConfig
 import com.nextbreakpoint.handler.ClusterCreateHandler
 import com.nextbreakpoint.handler.ClusterDeleteHandler
 import com.nextbreakpoint.model.*

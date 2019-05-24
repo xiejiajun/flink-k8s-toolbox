@@ -1,7 +1,7 @@
 package com.nextbreakpoint.handler
 
-import com.nextbreakpoint.model.Descriptor
-import com.nextbreakpoint.model.JobRunParams
+import com.nextbreakpoint.common.model.Descriptor
+import com.nextbreakpoint.handler.model.JobRunParams
 import io.kubernetes.client.apis.AppsV1Api
 import io.kubernetes.client.custom.Quantity
 import io.kubernetes.client.models.*

@@ -1,6 +1,7 @@
 package com.nextbreakpoint.operator
 
-import com.nextbreakpoint.model.Descriptor
+import com.nextbreakpoint.common.TestFactory
+import com.nextbreakpoint.common.model.Descriptor
 import com.nextbreakpoint.operator.model.ClusterStatus
 import com.nextbreakpoint.operator.model.ResourceStatus
 import com.nextbreakpoint.operator.model.Storage

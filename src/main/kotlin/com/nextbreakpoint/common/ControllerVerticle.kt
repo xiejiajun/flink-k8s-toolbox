@@ -1,9 +1,10 @@
-package com.nextbreakpoint
+package com.nextbreakpoint.common
 
 import com.google.gson.Gson
-import com.nextbreakpoint.CommandUtils.createKubernetesClient
+import com.nextbreakpoint.common.CommandUtils.createKubernetesClient
+import com.nextbreakpoint.common.model.*
 import com.nextbreakpoint.handler.*
-import com.nextbreakpoint.model.*
+import com.nextbreakpoint.handler.model.*
 import com.nextbreakpoint.operator.model.Cluster
 import io.kubernetes.client.Configuration
 import io.vertx.core.json.JsonObject

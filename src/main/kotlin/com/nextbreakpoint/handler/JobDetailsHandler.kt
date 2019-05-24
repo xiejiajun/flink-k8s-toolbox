@@ -1,8 +1,8 @@
 package com.nextbreakpoint.handler
 
 import com.google.gson.Gson
-import com.nextbreakpoint.CommandUtils
-import com.nextbreakpoint.model.JobDescriptor
+import com.nextbreakpoint.common.CommandUtils
+import com.nextbreakpoint.handler.model.JobDescriptor
 import io.kubernetes.client.apis.CoreV1Api
 import org.apache.log4j.Logger
 

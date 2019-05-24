@@ -1,6 +1,6 @@
 package com.nextbreakpoint.operator
 
-import com.nextbreakpoint.model.Descriptor
+import com.nextbreakpoint.common.model.Descriptor
 import com.nextbreakpoint.operator.model.*
 import io.kubernetes.client.custom.IntOrString
 import io.kubernetes.client.custom.Quantity

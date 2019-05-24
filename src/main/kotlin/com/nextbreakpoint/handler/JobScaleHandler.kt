@@ -1,7 +1,7 @@
 package com.nextbreakpoint.handler
 
-import com.nextbreakpoint.CommandUtils
-import com.nextbreakpoint.model.JobScaleParams
+import com.nextbreakpoint.common.CommandUtils
+import com.nextbreakpoint.handler.model.JobScaleParams
 import io.kubernetes.client.apis.CoreV1Api
 import org.apache.log4j.Logger
 

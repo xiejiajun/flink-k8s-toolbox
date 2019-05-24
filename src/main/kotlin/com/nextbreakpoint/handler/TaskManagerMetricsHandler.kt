@@ -2,10 +2,10 @@ package com.nextbreakpoint.handler
 
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.nextbreakpoint.CommandUtils
+import com.nextbreakpoint.common.CommandUtils
 import com.nextbreakpoint.flinkclient.api.FlinkApi
-import com.nextbreakpoint.model.TaskManagerDescriptor
-import com.nextbreakpoint.model.Metric
+import com.nextbreakpoint.handler.model.TaskManagerDescriptor
+import com.nextbreakpoint.common.model.Metric
 import io.kubernetes.client.JSON
 import io.kubernetes.client.apis.CoreV1Api
 import org.apache.log4j.Logger

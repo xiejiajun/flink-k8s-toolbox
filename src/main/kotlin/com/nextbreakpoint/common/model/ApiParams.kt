@@ -1,4 +1,4 @@
-package com.nextbreakpoint.model
+package com.nextbreakpoint.common.model
 
 data class ApiParams(
     val host: String,

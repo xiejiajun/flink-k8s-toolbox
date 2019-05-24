@@ -1,7 +1,6 @@
-package com.nextbreakpoint.command
+package com.nextbreakpoint.common
 
-import com.nextbreakpoint.WebClientFactory
-import com.nextbreakpoint.model.ApiParams
+import com.nextbreakpoint.common.model.ApiParams
 
 open class PostCommand<T>(val factory: WebClientFactory) {
     fun run(apiParams: ApiParams, path: String, body: T) {

@@ -1,8 +1,8 @@
 package com.nextbreakpoint.command
 
 import com.google.gson.Gson
-import com.nextbreakpoint.ControllerVerticle
-import com.nextbreakpoint.model.ControllerConfig
+import com.nextbreakpoint.common.ControllerVerticle
+import com.nextbreakpoint.handler.model.ControllerConfig
 import io.vertx.core.Launcher
 import org.apache.log4j.Logger
 

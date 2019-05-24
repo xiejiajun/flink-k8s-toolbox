@@ -1,5 +1,6 @@
 package com.nextbreakpoint.operator
 
+import com.nextbreakpoint.common.TestFactory
 import com.nextbreakpoint.model.V1FlinkClusterEnvVar
 import com.nextbreakpoint.model.V1FlinkClusterSpec
 import io.kubernetes.client.models.V1ObjectMeta

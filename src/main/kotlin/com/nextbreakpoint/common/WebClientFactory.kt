@@ -1,6 +1,6 @@
-package com.nextbreakpoint
+package com.nextbreakpoint.common
 
-import com.nextbreakpoint.model.ApiParams
+import com.nextbreakpoint.common.model.ApiParams
 import io.vertx.rxjava.ext.web.client.WebClient
 
 interface WebClientFactory {

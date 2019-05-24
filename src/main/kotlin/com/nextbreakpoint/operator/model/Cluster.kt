@@ -1,6 +1,6 @@
 package com.nextbreakpoint.operator.model
 
-import com.nextbreakpoint.model.Descriptor
+import com.nextbreakpoint.common.model.Descriptor
 
 data class Cluster(
     val descriptor: Descriptor,

@@ -2,11 +2,11 @@ package com.nextbreakpoint.handler
 
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.nextbreakpoint.CommandUtils
+import com.nextbreakpoint.common.CommandUtils
 import com.nextbreakpoint.flinkclient.api.FlinkApi
-import com.nextbreakpoint.model.Descriptor
-import com.nextbreakpoint.model.JobManagerMetrics
-import com.nextbreakpoint.model.Metric
+import com.nextbreakpoint.common.model.Descriptor
+import com.nextbreakpoint.handler.model.JobManagerMetrics
+import com.nextbreakpoint.common.model.Metric
 import io.kubernetes.client.JSON
 import io.kubernetes.client.apis.CoreV1Api
 import org.apache.log4j.Logger
@@ -127,8 +127,10 @@ object JobManagerMetricsHandler {
                 jvmMemoryMappedTotalCapacity = metricsMap.get("Status.JVM.Memory.Mapped.TotalCapacity")?.toLong() ?: 0,
                 jvmGarbageCollectorCopyTime = metricsMap.get("Status.JVM.GarbageCollector.Copy.Time")?.toLong() ?: 0L,
                 jvmGarbageCollectorCopyCount = metricsMap.get("Status.JVM.GarbageCollector.Copy.Count")?.toInt() ?: 0,
-                jvmGarbageCollectorMarkSweepCompactTime = metricsMap.get("Status.JVM.GarbageCollector.MarkSweepCompact.Time")?.toLong() ?: 0L,
-                jvmGarbageCollectorMarkSweepCompactCount = metricsMap.get("Status.JVM.GarbageCollector.MarkSweepCompact.Count")?.toInt() ?: 0,
+                jvmGarbageCollectorMarkSweepCompactTime = metricsMap.get("Status.JVM.GarbageCollector.MarkSweepCompact.Time")?.toLong()
+                    ?: 0L,
+                jvmGarbageCollectorMarkSweepCompactCount = metricsMap.get("Status.JVM.GarbageCollector.MarkSweepCompact.Count")?.toInt()
+                    ?: 0,
                 jvmClassLoaderClassesLoaded = metricsMap.get("Status.JVM.ClassLoader.ClassesLoaded")?.toInt() ?: 0,
                 jvmClassLoaderClassesUnloaded = metricsMap.get("Status.JVM.ClassLoader.ClassesUnloaded")?.toInt() ?: 0,
                 taskSlotsTotal = metricsMap.get("taskSlotsTotal")?.toInt() ?: 0,

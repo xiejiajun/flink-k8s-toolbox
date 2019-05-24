@@ -1,5 +1,6 @@
-package com.nextbreakpoint.model
+package com.nextbreakpoint.handler.model
 
+import com.nextbreakpoint.common.model.Descriptor
 import com.nextbreakpoint.operator.model.Sidecar
 
 data class JobRunParams(
