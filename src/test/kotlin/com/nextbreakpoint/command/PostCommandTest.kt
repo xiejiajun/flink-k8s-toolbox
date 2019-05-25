@@ -108,8 +108,13 @@ class PostCommandTest {
                 .withHeader("Content-Type", "application/json")
                 .withBody("{\"response\":\"ok\"}")));
 
-        DefaultPostCommand<String>(DefaultWebClientFactory)
-            .run(ApiParams("localhost", 8089), "/test", "payload")
+        val command = object : DefaultPostCommand<String>(DefaultWebClientFactory) {
+            override fun run(apiParams: ApiParams, body: String) {
+                this.run(apiParams, "/test", body)
+            }
+        }
+
+        command.run(ApiParams("localhost", 8089), "payload")
 
         verify(1, postRequestedFor(urlEqualTo("/test"))
             .withRequestBody(EqualToJsonPattern("'payload'", true, true)))
@@ -123,11 +128,13 @@ class PostCommandTest {
             }
         }
 
-        assertThrows<RuntimeException> {  DefaultPostCommand<String>(testFactory).run(
-            ApiParams(
-                "localhost",
-                8089
-            ), "/test", "payload") }
+        val command = object : DefaultPostCommand<String>(testFactory) {
+            override fun run(apiParams: ApiParams, body: String) {
+                this.run(apiParams, "/test", body)
+            }
+        }
+
+        assertThrows<RuntimeException> { command.run(ApiParams("localhost", 8089), "payload") }
     }
 
     @Test
