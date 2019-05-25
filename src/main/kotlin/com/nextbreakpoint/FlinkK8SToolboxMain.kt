@@ -5,58 +5,64 @@ import com.github.ajalt.clikt.core.subcommands
 import com.github.ajalt.clikt.parameters.options.*
 import com.github.ajalt.clikt.parameters.types.float
 import com.github.ajalt.clikt.parameters.types.int
-import com.nextbreakpoint.command.*
+import com.nextbreakpoint.common.CommandFactory
 import com.nextbreakpoint.common.CommandUtils
-import com.nextbreakpoint.common.model.*
+import com.nextbreakpoint.common.DefaultCommandFactory
+import com.nextbreakpoint.common.model.ApiParams
+import com.nextbreakpoint.common.model.Descriptor
 import com.nextbreakpoint.handler.model.*
 import com.nextbreakpoint.operator.model.*
 import io.kubernetes.client.Configuration
 
-class FlinkK8SToolboxMain {
+class FlinkK8SToolboxMain(private val factory: CommandFactory) {
+    fun run(args: Array<String>) {
+        try {
+            MainCommand().subcommands(
+                Controller().subcommands(
+                    RunControllerCommand(factory)
+                ),
+                Operator().subcommands(
+                    RunOperatorCommand(factory)
+                ),
+                Cluster().subcommands(
+                    CreateClusterCommand(factory),
+                    DeleteClusterCommand(factory)
+                ),
+                Sidecar().subcommands(
+                    SidecarSubmitCommand(factory),
+                    SidecarWatchCommand(factory)
+                ),
+                Job().subcommands(
+                    RunJobCommand(factory),
+                    ScaleJobCommand(factory),
+                    CancelJobCommand(factory),
+                    GetJobDetailsCommand(factory),
+                    GetJobMetricsCommand(factory)
+                ),
+                Jobs().subcommands(
+                    ListJobsCommand(factory)
+                ),
+                JobManager().subcommands(
+                    GetJobManagerMetricsCommand(factory)
+                ),
+                TaskManager().subcommands(
+                    GetTaskManagerDetailsCommand(factory),
+                    GetTaskManagerMetricsCommand(factory)
+                ),
+                TaskManagers().subcommands(
+                    ListTaskManagersCommand(factory)
+                )
+            ).main(args)
+            System.exit(0)
+        } catch (e: Exception) {
+            System.exit(-1)
+        }
+    }
+
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
-            try {
-                MainCommand().subcommands(
-                    Controller().subcommands(
-                        RunControllerCommand()
-                    ),
-                    Operator().subcommands(
-                        RunOperatorCommand()
-                    ),
-                    Cluster().subcommands(
-                        CreateClusterCommand(),
-                        DeleteClusterCommand()
-                    ),
-                    Sidecar().subcommands(
-                        SidecarSubmitCommand(),
-                        SidecarWatchCommand()
-                    ),
-                    Job().subcommands(
-                        RunJobCommand(),
-                        ScaleJobCommand(),
-                        CancelJobCommand(),
-                        GetJobDetailsCommand(),
-                        GetJobMetricsCommand()
-                    ),
-                    Jobs().subcommands(
-                        ListJobsCommand()
-                    ),
-                    JobManager().subcommands(
-                        GetJobManagerMetricsCommand()
-                    ),
-                    TaskManager().subcommands(
-                        GetTaskManagerDetailsCommand(),
-                        GetTaskManagerMetricsCommand()
-                    ),
-                    TaskManagers().subcommands(
-                        ListTaskManagersCommand()
-                    )
-                ).main(args)
-                System.exit(0)
-            } catch (e: Exception) {
-                System.exit(-1)
-            }
+            FlinkK8SToolboxMain(DefaultCommandFactory).run(args)
         }
     }
 
@@ -100,7 +106,7 @@ class FlinkK8SToolboxMain {
         override fun run() = Unit
     }
 
-    class CreateClusterCommand: CliktCommand(name = "create", help="Create a cluster") {
+    class CreateClusterCommand(private val factory: CommandFactory): CliktCommand(name = "create", help="Create a cluster") {
         private val host: String by option(help="The controller address").default("localhost")
         private val port: Int by option(help="The controller port").int().default(4444)
         private val clusterName: String by option(help="The name of the new Flink cluster").required()
@@ -183,7 +189,7 @@ class FlinkK8SToolboxMain {
                     parallelism = sidecarParallelism
                 )
             )
-            PostCommandClusterCreate().run(ApiParams(host, port), config)
+            factory.createCreateClusterCommand().run(ApiParams(host, port), config)
         }
 
         private fun expandVariables(list: List<String>) =
@@ -193,7 +199,7 @@ class FlinkK8SToolboxMain {
                 .toList()
     }
 
-    class DeleteClusterCommand: CliktCommand(name = "delete", help="Delete a cluster") {
+    class DeleteClusterCommand(private val factory: CommandFactory): CliktCommand(name = "delete", help="Delete a cluster") {
         private val host: String by option(help="The controller address").default("localhost")
         private val port: Int by option(help="The controller port").int().default(4444)
         private val namespace: String by option(help="The namespace where to create the resources").default("default")
@@ -204,11 +210,11 @@ class FlinkK8SToolboxMain {
                 namespace = namespace,
                 name = clusterName
             )
-            PostCommandClusterDelete().run(ApiParams(host, port), descriptor)
+            factory.createDeleteClusterCommand().run(ApiParams(host, port), descriptor)
         }
     }
 
-    class RunJobCommand: CliktCommand(name="run", help="Run a job") {
+    class RunJobCommand(private val factory: CommandFactory): CliktCommand(name="run", help="Run a job") {
         private val host: String by option(help="The controller address").default("localhost")
         private val port: Int by option(help="The controller port").int().default(4444)
         private val namespace: String by option(help="The namespace where to create the resources").default("default")
@@ -242,12 +248,12 @@ class FlinkK8SToolboxMain {
                     parallelism = sidecarParallelism
                 )
             )
-            PostCommandJobRun().run(ApiParams(host, port), config)
+            factory.createRunJobCommand().run(ApiParams(host, port), config)
             System.exit(0)
         }
     }
 
-    class ListJobsCommand: CliktCommand(name="list", help="List jobs") {
+    class ListJobsCommand(private val factory: CommandFactory): CliktCommand(name="list", help="List jobs") {
         private val host: String by option(help="The controller address").default("localhost")
         private val port: Int by option(help="The controller port").int().default(4444)
         private val namespace: String by option(help="The namespace where to create the resources").default("default")
@@ -262,11 +268,11 @@ class FlinkK8SToolboxMain {
                 ),
                 running = onlyRunning
             )
-            PostCommandJobsList().run(ApiParams(host, port), config)
+            factory.createListJobsCommand().run(ApiParams(host, port), config)
         }
     }
 
-    class ScaleJobCommand: CliktCommand(name = "scale", help="Scale a job") {
+    class ScaleJobCommand(private val factory: CommandFactory): CliktCommand(name = "scale", help="Scale a job") {
         private val host: String by option(help="The controller address").default("localhost")
         private val port: Int by option(help="The controller port").int().default(4444)
         private val namespace: String by option(help="The namespace where to create the resources").default("default")
@@ -285,11 +291,11 @@ class FlinkK8SToolboxMain {
                 ),
                 parallelism = parallelism
             )
-            PostCommandJobScale().run(ApiParams(host, port), config)
+            factory.createScaleJobCommand().run(ApiParams(host, port), config)
         }
     }
 
-    class CancelJobCommand: CliktCommand(name = "cancel", help="Cancel a job") {
+    class CancelJobCommand(private val factory: CommandFactory): CliktCommand(name = "cancel", help="Cancel a job") {
         private val host: String by option(help="The controller address").default("localhost")
         private val port: Int by option(help="The controller port").int().default(4444)
         private val namespace: String by option(help="The namespace where to create the resources").default("default")
@@ -310,11 +316,11 @@ class FlinkK8SToolboxMain {
                 savepoint = createSavepoint,
                 savepointPath = savepointPath
             )
-            PostCommandJobCancel().run(ApiParams(host, port), config)
+            factory.createCancelJobCommand().run(ApiParams(host, port), config)
         }
     }
 
-    class GetJobDetailsCommand: CliktCommand(name = "details", help="Get job's details") {
+    class GetJobDetailsCommand(private val factory: CommandFactory): CliktCommand(name = "details", help="Get job's details") {
         private val host: String by option(help="The controller address").default("localhost")
         private val port: Int by option(help="The controller port").int().default(4444)
         private val namespace: String by option(help="The namespace where to create the resources").default("default")
@@ -329,11 +335,11 @@ class FlinkK8SToolboxMain {
                 ),
                 jobId = jobId
             )
-            PostCommandJobDetails().run(ApiParams(host, port), config)
+            factory.createGetJobDetailsCommand().run(ApiParams(host, port), config)
         }
     }
 
-    class GetJobMetricsCommand: CliktCommand(name = "metrics", help="Get job's metrics") {
+    class GetJobMetricsCommand(private val factory: CommandFactory): CliktCommand(name = "metrics", help="Get job's metrics") {
         private val host: String by option(help="The controller address").default("localhost")
         private val port: Int by option(help="The controller port").int().default(4444)
         private val namespace: String by option(help="The namespace where to create the resources").default("default")
@@ -348,11 +354,11 @@ class FlinkK8SToolboxMain {
                 ),
                 jobId = jobId
             )
-            PostCommandJobMetrics().run(ApiParams(host, port), config)
+            factory.createGetJobMetricsCommand().run(ApiParams(host, port), config)
         }
     }
 
-    class GetJobManagerMetricsCommand: CliktCommand(name = "metrics", help="Get JobManager's metrics") {
+    class GetJobManagerMetricsCommand(private val factory: CommandFactory): CliktCommand(name = "metrics", help="Get JobManager's metrics") {
         private val host: String by option(help="The controller address").default("localhost")
         private val port: Int by option(help="The controller port").int().default(4444)
         private val namespace: String by option(help="The namespace where to create the resources").default("default")
@@ -363,11 +369,11 @@ class FlinkK8SToolboxMain {
                 namespace = namespace,
                 name = clusterName
             )
-            PostCommandJobManagerMetrics().run(ApiParams(host, port), descriptor)
+            factory.createGetJobManagerMetricsCommand().run(ApiParams(host, port), descriptor)
         }
     }
 
-    class GetTaskManagerDetailsCommand: CliktCommand(name = "details", help="Get TaskManager's details") {
+    class GetTaskManagerDetailsCommand(private val factory: CommandFactory): CliktCommand(name = "details", help="Get TaskManager's details") {
         private val host: String by option(help="The controller address").default("localhost")
         private val port: Int by option(help="The controller port").int().default(4444)
         private val namespace: String by option(help="The namespace where to create the resources").default("default")
@@ -382,11 +388,11 @@ class FlinkK8SToolboxMain {
                 ),
                 taskmanagerId = taskmanagerId
             )
-            PostCommandTaskManagerDetails().run(ApiParams(host, port), config)
+            factory.createGetTaskManagerDetailsCommand().run(ApiParams(host, port), config)
         }
     }
 
-    class GetTaskManagerMetricsCommand: CliktCommand(name = "metrics", help="Get TaskManager's metrics") {
+    class GetTaskManagerMetricsCommand(private val factory: CommandFactory): CliktCommand(name = "metrics", help="Get TaskManager's metrics") {
         private val host: String by option(help="The controller address").default("localhost")
         private val port: Int by option(help="The controller port").int().default(4444)
         private val namespace: String by option(help="The namespace where to create the resources").default("default")
@@ -401,11 +407,11 @@ class FlinkK8SToolboxMain {
                 ),
                 taskmanagerId = taskmanagerId
             )
-            PostCommandTaskManagerMetrics().run(ApiParams(host, port), config)
+            factory.createGetTaskManagerMetricsCommand().run(ApiParams(host, port), config)
         }
     }
 
-    class ListTaskManagersCommand: CliktCommand(name="list", help="List TaskManagers") {
+    class ListTaskManagersCommand(private val factory: CommandFactory): CliktCommand(name="list", help="List TaskManagers") {
         private val host: String by option(help="The controller address").default("localhost")
         private val port: Int by option(help="The controller port").int().default(4444)
         private val namespace: String by option(help="The namespace where to create the resources").default("default")
@@ -416,11 +422,11 @@ class FlinkK8SToolboxMain {
                 namespace = namespace,
                 name = clusterName
             )
-            PostCommandTaskManagersList().run(ApiParams(host, port), descriptor)
+            factory.createListTaskManagersCommand().run(ApiParams(host, port), descriptor)
         }
     }
 
-    class RunControllerCommand: CliktCommand(name = "run", help="Run the controller") {
+    class RunControllerCommand(private val factory: CommandFactory): CliktCommand(name = "run", help="Run the controller") {
         private val port: Int by option(help="Listen on port").int().default(4444)
         private val portForward: Int? by option(help="Connect to JobManager using port forward").int()
         private val kubeConfig: String? by option(help="The path of Kubectl config")
@@ -431,21 +437,21 @@ class FlinkK8SToolboxMain {
                 portForward = portForward,
                 kubeConfig = kubeConfig
             )
-            RunController().run(config)
+            factory.createRunControllerCommand().run(config)
         }
     }
 
-    class RunOperatorCommand: CliktCommand(name="run", help="Run the operator") {
+    class RunOperatorCommand(private val factory: CommandFactory): CliktCommand(name="run", help="Run the operator") {
         private val namespace: String by option(help="The namespace where to create the resources").default("default")
         private val kubeConfig: String? by option(help="The path of kuke config")
 
         override fun run() {
             Configuration.setDefaultApiClient(CommandUtils.createKubernetesClient(kubeConfig))
-            RunOperator().run(OperatorConfig(namespace))
+            factory.createRunOperatorCommand().run(OperatorConfig(namespace))
         }
     }
 
-    class SidecarSubmitCommand: CliktCommand(name="submit", help="Submit a job and monitor cluster jobs") {
+    class SidecarSubmitCommand(private val factory: CommandFactory): CliktCommand(name="submit", help="Submit a job and monitor cluster jobs") {
         private val portForward: Int? by option(help="Connect to JobManager using port forward").int()
         private val kubeConfig: String? by option(help="The path of kuke config")
         private val namespace: String by option(help="The namespace where to create the resources").default("default")
@@ -470,11 +476,11 @@ class FlinkK8SToolboxMain {
                 parallelism = parallelism
             )
             Configuration.setDefaultApiClient(CommandUtils.createKubernetesClient(kubeConfig))
-            RunSidecarSubmit().run(portForward, kubeConfig != null, config)
+            factory.createSidecarSubmitCommand().run(portForward, kubeConfig != null, config)
         }
     }
 
-    class SidecarWatchCommand: CliktCommand(name="watch", help="Monitor cluster jobs") {
+    class SidecarWatchCommand(private val factory: CommandFactory): CliktCommand(name="watch", help="Monitor cluster jobs") {
         private val portForward: Int? by option(help="Connect to JobManager using port forward").int()
         private val kubeConfig: String? by option(help="The path of kuke config")
         private val namespace: String by option(help="The namespace where to create the resources").default("default")
@@ -488,7 +494,7 @@ class FlinkK8SToolboxMain {
                 )
             )
             Configuration.setDefaultApiClient(CommandUtils.createKubernetesClient(kubeConfig))
-            RunSidecarWatch().run(portForward, kubeConfig != null, config)
+            factory.createSidecarWatchCommand().run(portForward, kubeConfig != null, config)
         }
     }
 }

@@ -2,22 +2,23 @@ package com.nextbreakpoint.command
 
 import com.google.gson.Gson
 import com.nextbreakpoint.common.ControllerVerticle
+import com.nextbreakpoint.common.ServerCommand
 import com.nextbreakpoint.handler.model.ControllerConfig
 import io.vertx.core.Launcher
 import org.apache.log4j.Logger
 
-class RunController {
+class RunController : ServerCommand<ControllerConfig> {
     companion object {
         val logger = Logger.getLogger(RunController::class.simpleName)
     }
 
-    fun run(controllerConfig: ControllerConfig) {
+    override fun run(config: ControllerConfig) {
         try {
             System.setProperty("crypto.policy", "unlimited")
             System.setProperty("vertx.graphite.options.enabled", "true")
             System.setProperty("vertx.graphite.options.registryName", "exported")
             logger.info("Launching controller...")
-            Launcher.main(arrayOf("run", ControllerVerticle::class.java.canonicalName, "-conf", Gson().toJson(controllerConfig)))
+            Launcher.main(arrayOf("run", ControllerVerticle::class.java.canonicalName, "-conf", Gson().toJson(config)))
             while (true) {
                 if (Thread.interrupted()) {
                     break

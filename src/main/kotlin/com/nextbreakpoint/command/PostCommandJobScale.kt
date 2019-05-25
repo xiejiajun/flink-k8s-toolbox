@@ -1,13 +1,13 @@
 package com.nextbreakpoint.command
 
 import com.nextbreakpoint.common.DefaultWebClientFactory
-import com.nextbreakpoint.common.PostCommand
+import com.nextbreakpoint.common.DefaultPostCommand
 import com.nextbreakpoint.common.model.ApiParams
 import com.nextbreakpoint.handler.model.JobScaleParams
 
-class PostCommandJobScale : PostCommand<JobScaleParams>(DefaultWebClientFactory) {
-    fun run(apiParams: ApiParams, scaleParams: JobScaleParams) {
-        super.run(apiParams, "/job/scale", scaleParams)
+class PostCommandJobScale : DefaultPostCommand<JobScaleParams>(DefaultWebClientFactory) {
+    override fun run(apiParams: ApiParams, body: JobScaleParams) {
+        super.run(apiParams, "/job/scale", body)
     }
 }
 

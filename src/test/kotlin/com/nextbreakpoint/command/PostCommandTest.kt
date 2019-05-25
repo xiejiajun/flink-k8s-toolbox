@@ -4,7 +4,7 @@ import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.matching.EqualToJsonPattern
 import com.nextbreakpoint.common.DefaultWebClientFactory
-import com.nextbreakpoint.common.PostCommand
+import com.nextbreakpoint.common.DefaultPostCommand
 import com.nextbreakpoint.common.WebClientFactory
 import com.nextbreakpoint.common.model.*
 import com.nextbreakpoint.handler.model.*
@@ -108,7 +108,7 @@ class PostCommandTest {
                 .withHeader("Content-Type", "application/json")
                 .withBody("{\"response\":\"ok\"}")));
 
-        PostCommand<String>(DefaultWebClientFactory)
+        DefaultPostCommand<String>(DefaultWebClientFactory)
             .run(ApiParams("localhost", 8089), "/test", "payload")
 
         verify(1, postRequestedFor(urlEqualTo("/test"))
@@ -123,7 +123,7 @@ class PostCommandTest {
             }
         }
 
-        assertThrows<RuntimeException> {  PostCommand<String>(testFactory).run(
+        assertThrows<RuntimeException> {  DefaultPostCommand<String>(testFactory).run(
             ApiParams(
                 "localhost",
                 8089

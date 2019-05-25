@@ -1,5 +1,6 @@
 package com.nextbreakpoint.command
 
+import com.nextbreakpoint.common.ServerCommand
 import com.nextbreakpoint.common.model.Descriptor
 import com.nextbreakpoint.handler.model.OperatorConfig
 import com.nextbreakpoint.handler.ClusterCreateHandler
@@ -26,7 +27,7 @@ import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
-class RunOperator {
+class RunOperator : ServerCommand<OperatorConfig> {
     companion object {
         val logger: Logger = Logger.getLogger(RunOperator::class.simpleName)
 
@@ -51,7 +52,7 @@ class RunOperator {
     private val jobmanagerPersistentVolumeClaims = mutableMapOf<Descriptor, V1PersistentVolumeClaim>()
     private val taskmanagerPersistentVolumeClaims = mutableMapOf<Descriptor, V1PersistentVolumeClaim>()
 
-    fun run(config: OperatorConfig) {
+    override fun run(config: OperatorConfig) {
         try {
             RunController.logger.info("Launching operator...")
 

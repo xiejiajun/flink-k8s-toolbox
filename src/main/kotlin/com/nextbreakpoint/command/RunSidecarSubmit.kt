@@ -2,17 +2,18 @@ package com.nextbreakpoint.command
 
 import com.google.gson.Gson
 import com.nextbreakpoint.common.CommandUtils
+import com.nextbreakpoint.common.SidecarCommand
 import com.nextbreakpoint.handler.model.JobSubmitParams
 import io.kubernetes.client.apis.CoreV1Api
 import org.apache.log4j.Logger
 import java.io.File
 
-class RunSidecarSubmit {
+class RunSidecarSubmit : SidecarCommand<JobSubmitParams> {
     companion object {
         val logger = Logger.getLogger(RunSidecarSubmit::class.simpleName)
     }
 
-    fun run(portForward: Int?, useNodePort: Boolean, submitParams: JobSubmitParams) {
+    override fun run(portForward: Int?, useNodePort: Boolean, params: JobSubmitParams) {
         try {
             logger.info("Launching sidecar...")
 
@@ -50,12 +51,12 @@ class RunSidecarSubmit {
 
             if (portForward == null) {
                 val services = coreApi.listNamespacedService(
-                    submitParams.descriptor.namespace,
+                    params.descriptor.namespace,
                     null,
                     null,
                     null,
                     null,
-                    "cluster=${submitParams.descriptor.name},role=jobmanager",
+                    "cluster=${params.descriptor.name},role=jobmanager",
                     1,
                     null,
                     30,
@@ -94,12 +95,12 @@ class RunSidecarSubmit {
                 }
 
                 val pods = coreApi.listNamespacedPod(
-                    submitParams.descriptor.namespace,
+                    params.descriptor.namespace,
                     null,
                     null,
                     null,
                     null,
-                    "cluster=${submitParams.descriptor.name},role=jobmanager",
+                    "cluster=${params.descriptor.name},role=jobmanager",
                     1,
                     null,
                     30,
@@ -123,7 +124,7 @@ class RunSidecarSubmit {
 
             logger.info("Uploading jar...")
 
-            val result = api.uploadJar(File(submitParams.jarPath))
+            val result = api.uploadJar(File(params.jarPath))
 
             logger.info("File uploaded: ${Gson().toJson(result)}")
 
@@ -133,11 +134,11 @@ class RunSidecarSubmit {
                 val response = api.runJar(
                     result.filename.substringAfterLast(delimiter = "/"),
                     false,
-                    submitParams.savepoint,
-                    submitParams.arguments,
+                    params.savepoint,
+                    params.arguments,
                     null,
-                    submitParams.className,
-                    submitParams.parallelism
+                    params.className,
+                    params.parallelism
                 )
 
                 logger.info("Job started: ${Gson().toJson(response)}")

@@ -2,16 +2,17 @@ package com.nextbreakpoint.command
 
 import com.google.gson.Gson
 import com.nextbreakpoint.common.CommandUtils
+import com.nextbreakpoint.common.SidecarCommand
 import com.nextbreakpoint.handler.model.WatchParams
 import io.kubernetes.client.apis.CoreV1Api
 import org.apache.log4j.Logger
 
-class RunSidecarWatch {
+class RunSidecarWatch : SidecarCommand<WatchParams> {
     companion object {
         val logger = Logger.getLogger(RunSidecarWatch::class.simpleName)
     }
 
-    fun run(portForward: Int?, useNodePort: Boolean, watchParams: WatchParams) {
+    override fun run(portForward: Int?, useNodePort: Boolean, params: WatchParams) {
         try {
             logger.info("Launching sidecar...")
 
@@ -52,12 +53,12 @@ class RunSidecarWatch {
                 logger.info("Looking for pod...")
 
                 val services = coreApi.listNamespacedService(
-                    watchParams.descriptor.namespace,
+                    params.descriptor.namespace,
                     null,
                     null,
                     null,
                     null,
-                    "cluster=${watchParams.descriptor.name},role=jobmanager",
+                    "cluster=${params.descriptor.name},role=jobmanager",
                     1,
                     null,
                     30,
@@ -96,12 +97,12 @@ class RunSidecarWatch {
                 }
 
                 val pods = coreApi.listNamespacedPod(
-                    watchParams.descriptor.namespace,
+                    params.descriptor.namespace,
                     null,
                     null,
                     null,
                     null,
-                    "cluster=${watchParams.descriptor.name},role=jobmanager",
+                    "cluster=${params.descriptor.name},role=jobmanager",
                     1,
                     null,
                     30,
